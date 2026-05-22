@@ -815,6 +815,56 @@ window.openModal = id => document.getElementById('modal-' + id).classList.add('o
 window.closeModal = id => document.getElementById('modal-' + id).classList.remove('open');
 document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target===b) b.classList.remove('open'); }));
 
+// ── Project Card Drag & Drop ──
+let _projDragSrc = null;
+
+window.projDragStart = (e) => {
+  _projDragSrc = e.currentTarget;
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+};
+
+window.projDragOver = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const card = e.currentTarget;
+  if (card !== _projDragSrc) {
+    card.style.outline = '2px solid var(--accent)';
+    card.style.outlineOffset = '2px';
+  }
+};
+
+window.projDragEnd = (e) => {
+  e.currentTarget.style.opacity = '';
+  document.querySelectorAll('.proj-card').forEach(c => {
+    c.style.outline = '';
+    c.style.outlineOffset = '';
+  });
+};
+
+window.projDrop = async (e) => {
+  e.preventDefault();
+  const targetCard = e.currentTarget;
+  targetCard.style.outline = '';
+  if (!_projDragSrc || _projDragSrc === targetCard) return;
+
+  const container = document.getElementById('project-cards');
+  const cards = [...container.querySelectorAll('.proj-card')];
+  const srcIdx = cards.indexOf(_projDragSrc);
+  const tgtIdx = cards.indexOf(targetCard);
+
+  // Reorder DOM
+  if (srcIdx < tgtIdx) container.insertBefore(_projDragSrc, targetCard.nextSibling);
+  else container.insertBefore(_projDragSrc, targetCard);
+
+  // Save order to Firebase
+  const newCards = [...container.querySelectorAll('.proj-card')];
+  for (let i = 0; i < newCards.length; i++) {
+    const id = newCards[i].dataset.id;
+    if (id) await updateDoc(doc(db, 'projects', id), { sortOrder: i });
+  }
+};
+
 // ── Helpers ──
 const badge = (type, label) => `<span class="badge badge-${type}"><span class="badge-dot"></span>${label}</span>`;
 const statusBadge = s => {
@@ -851,7 +901,11 @@ function initApp() {
 // PROJECTS
 function listenProjects() {
   onSnapshot(collection(db,'projects'), snap => {
-    const rows = snap.docs;
+    const rows = snap.docs.sort((a, b) => {
+      const ao = a.data().sortOrder ?? 999;
+      const bo = b.data().sortOrder ?? 999;
+      return ao - bo;
+    });
     rows.forEach(d => window._cache.projects[d.id] = d.data());
     document.getElementById('s-projects').textContent = rows.length;
     const container = document.getElementById('project-cards');
@@ -887,9 +941,14 @@ function listenProjects() {
 
       const fmtDate = d => d ? d.slice(2).replace(/-/g,'/') : '—';
 
-      return `<div class="proj-card" id="proj-card-${d.id}">
+      return `<div class="proj-card" id="proj-card-${d.id}" draggable="true" data-id="${d.id}"
+        ondragstart="projDragStart(event)"
+        ondragover="projDragOver(event)"
+        ondrop="projDrop(event)"
+        ondragend="projDragEnd(event)">
         <div class="proj-card-header" onclick="toggleTradePanel('${d.id}')">
           <button class="proj-card-expand" id="expand-${d.id}" onclick="event.stopPropagation();toggleTradePanel('${d.id}')">▶</button>
+          <div style="color:var(--text3);font-size:18px;cursor:grab;user-select:none;padding:0 4px" title="拖曳排序">⠿</div>
           <div class="proj-card-main">
             <div class="proj-card-name">${p.name||''}</div>
             <div class="proj-card-meta">
