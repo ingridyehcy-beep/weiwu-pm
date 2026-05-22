@@ -268,7 +268,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>廠商名稱</th><th>類別</th><th>負責人／窗口</th><th>電話</th><th>統編</th><th>銀行帳號</th><th>合作專案</th><th>操作</th></tr></thead>
+        <thead><tr><th>廠商名稱</th><th>類別</th><th>電話</th><th>統編</th><th>銀行帳號</th><th>合作專案</th><th>操作</th></tr></thead>
         <tbody id="vendor-table"><tr><td colspan="6" class="loading">載入中...</td></tr></tbody>
       </table>
     </div>
@@ -540,6 +540,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div class="form-row"><label>類型</label><select id="p-type"><option>微物內部事項</option><option>辦公室</option><option>老屋翻新</option><option>新成屋</option><option>客變</option><option>專櫃</option><option>街邊店</option><option>接待會所</option><option>展場</option></select></div>
       <div class="form-row"><label>坪數</label><input id="p-area" type="number" placeholder="坪"></div>
     </div>
+    <div class="form-row"><label>施工地址</label><input id="p-address" placeholder="完整施工地址"></div>
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
@@ -556,6 +557,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
         <div class="form-row" style="margin:0"><label>實際天數</label><input id="p-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
       </div>
     </div>
+    <div class="form-row"><label>專案備註</label><textarea id="p-detail" rows="4" placeholder="戶別、密碼、車位、門鎖、其他注意事項..."></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('addProject')">取消</button>
       <button class="btn btn-primary" onclick="saveProject()">建立專案</button>
@@ -572,6 +574,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div class="form-row"><label>坪數</label><input id="ep-area" type="number" placeholder="坪"></div>
       <input type="hidden" id="ep-status" value="規劃中">
     </div>
+    <div class="form-row"><label>施工地址</label><input id="ep-address" placeholder="完整施工地址"></div>
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
@@ -588,6 +591,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
         <div class="form-row" style="margin:0"><label>實際天數</label><input id="ep-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
       </div>
     </div>
+    <div class="form-row"><label>專案備註</label><textarea id="ep-detail" rows="4" placeholder="戶別、密碼、車位、門鎖、其他注意事項..."></textarea></div>
     <input type="hidden" id="ep-id">
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('editProject')">取消</button>
@@ -610,8 +614,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
       <div class="form-grid">
-        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="ev-bank" placeholder="例：台灣銀行" autocomplete="off"></div>
-        <div class="form-row" style="margin:0"><label>分行</label><input id="ev-branch" placeholder="例：信義分行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="ev-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch',null,null)"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="ev-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch',null,null)"></div>
         <div class="form-row" style="margin:0"><label>帳號</label><input id="ev-account" placeholder="銀行帳號" autocomplete="off"></div>
       </div>
     </div>
@@ -718,8 +722,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
       <div class="form-grid">
-        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="v-bank" placeholder="例：台灣銀行" autocomplete="off"></div>
-        <div class="form-row" style="margin:0"><label>分行</label><input id="v-branch" placeholder="例：信義分行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="v-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch',null,null)"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="v-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch',null,null)"></div>
         <div class="form-row" style="margin:0"><label>帳號</label><input id="v-account" placeholder="銀行帳號" autocomplete="off"></div>
       </div>
     </div>
@@ -838,6 +842,66 @@ async function createProjectTemplate(projId) {
       createdAt: serverTimestamp()
     });
   }
+}
+
+// ── Taiwan Bank Code Database ──
+const TW_BANKS = [
+  {code:'004',name:'台灣銀行'},{code:'005',name:'土地銀行'},{code:'006',name:'合作金庫'},
+  {code:'007',name:'第一銀行'},{code:'008',name:'華南銀行'},{code:'009',name:'彰化銀行'},
+  {code:'011',name:'上海銀行'},{code:'012',name:'台北富邦'},{code:'013',name:'國泰世華'},
+  {code:'016',name:'高雄銀行'},{code:'017',name:'兆豐銀行'},{code:'021',name:'花旗銀行'},
+  {code:'050',name:'台灣企銀'},{code:'052',name:'渣打銀行'},{code:'053',name:'台中銀行'},
+  {code:'054',name:'京城銀行'},{code:'081',name:'匯豐銀行'},{code:'101',name:'瑞興銀行'},
+  {code:'102',name:'華泰銀行'},{code:'103',name:'台灣新光'},{code:'108',name:'陽信銀行'},
+  {code:'118',name:'板信銀行'},{code:'147',name:'三信銀行'},{code:'700',name:'中華郵政'},
+  {code:'803',name:'聯邦銀行'},{code:'805',name:'遠東銀行'},{code:'806',name:'元大銀行'},
+  {code:'807',name:'永豐銀行'},{code:'808',name:'玉山銀行'},{code:'809',name:'凱基銀行'},
+  {code:'810',name:'星展銀行'},{code:'812',name:'台新銀行'},{code:'814',name:'大眾銀行'},
+  {code:'815',name:'日盛銀行'},{code:'816',name:'安泰銀行'},{code:'822',name:'中國信託'},
+  {code:'823',name:'將來銀行'},{code:'824',name:'連線商業銀行'},{code:'826',name:'樂天銀行'},
+];
+
+// Branch codes for major banks (彰化銀行)
+const TW_BRANCHES = {
+  '009': [ // 彰化銀行
+    {code:'0090',name:'總行'},{code:'0091',name:'建國'},{code:'0092',name:'中山'},
+    {code:'0093',name:'民族'},{code:'0094',name:'東台北'},{code:'0095',name:'台北'},
+    {code:'0096',name:'西台北'},{code:'0097',name:'南台北'},{code:'0098',name:'北台北'},
+    {code:'0099',name:'松山'},{code:'0100',name:'信義'},{code:'0101',name:'大安'},
+    {code:'0102',name:'中正'},{code:'0103',name:'萬華'},{code:'0104',name:'士林'},
+    {code:'0105',name:'內湖'},{code:'0106',name:'木柵'},{code:'0107',name:'南港'},
+    {code:'0108',name:'汐止'},{code:'0109',name:'板橋'},{code:'0110',name:'新店'},
+    {code:'0111',name:'三重'},{code:'0112',name:'中和'},{code:'0113',name:'新莊'},
+    {code:'0114',name:'土城'},{code:'0115',name:'桃園'},{code:'0116',name:'中壢'},
+    {code:'0117',name:'台中'},{code:'0118',name:'台南'},{code:'0119',name:'高雄'},
+  ],
+};
+
+window.bankAutocomplete = (bankInputId, branchInputId, bankCodeId, branchCodeId) => {
+  const bankVal = document.getElementById(bankInputId).value.trim();
+  if (!bankVal) return;
+  const matched = TW_BANKS.find(b => b.name.includes(bankVal) || bankVal.includes(b.name) || b.code === bankVal);
+  if (matched) {
+    document.getElementById(bankInputId).value = matched.name;
+    if (bankCodeId) document.getElementById(bankCodeId).value = matched.code;
+    // Load branch options if available
+    if (branchInputId && TW_BRANCHES[matched.code]) {
+      const branchVal = document.getElementById(branchInputId).value.trim();
+      const matchedBranch = TW_BRANCHES[matched.code].find(b => b.name.includes(branchVal) || branchVal.includes(b.name));
+      if (matchedBranch) {
+        document.getElementById(branchInputId).value = `${matchedBranch.name}(${matchedBranch.code})`;
+      }
+    }
+  }
+};
+
+// Simple bank name formatter for display
+function formatBankDisplay(bank, branch, account) {
+  if (!bank && !account) return '—';
+  let result = bank || '';
+  if (branch) result += `/${branch}`;
+  if (account) result += `<br><span style="font-family:monospace;color:var(--text2)">${account}</span>`;
+  return result || '—';
 }
 
 // ── Vendor Project Checkboxes ──
@@ -1040,6 +1104,10 @@ function listenProjects() {
                 <span class="proj-card-trade-title">🔨 工種時程 — ${p.name||''}</span>
                 <button class="btn btn-primary btn-sm" onclick="openAddTrade('${d.id}','${(p.name||'').replace(/'/g,"\\'")}')">＋ 新增工種</button>
               </div>
+              ${p.address||p.detail ? `<div style="display:grid;grid-template-columns:${p.address&&p.detail?'1fr 2fr':'1fr'};gap:16px;margin-bottom:16px;padding:14px;background:var(--surface3);border-radius:8px">
+                ${p.address ? `<div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">📍 施工地址</div><div style="font-size:13px">${p.address}</div></div>` : ''}
+                ${p.detail ? `<div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">📋 專案備註</div><div style="font-size:13px;white-space:pre-wrap;line-height:1.7">${p.detail}</div></div>` : ''}
+              </div>` : ''}
               <div id="trade-list-${d.id}"><div class="empty" style="padding:16px;text-align:center">尚無工種，點「新增工種」開始</div></div>
             </div>
           </div>
@@ -1088,10 +1156,9 @@ function listenVendors() {
       return `<tr>
         <td><strong>${p.name||''}</strong></td>
         <td style="color:var(--blue);font-size:12px">${p.cat||''}</td>
-        <td>${p.contact||'—'}<br><span style="color:var(--text3);font-size:11px">${p.window?'窗口：'+p.window:''}</span></td>
         <td style="font-family:monospace">${p.phone||'—'}</td>
         <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.taxid||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${p.bank||'—'}${p.branch?' '+p.branch:''}<br><span style="font-family:monospace">${p.account||''}</span></td>
+        <td style="font-size:11px;color:var(--text2)">${p.bank||''}${p.branch?'/'+p.branch:''}<br><span style="font-family:monospace;color:var(--text2)">${p.account||'—'}</span></td>
         <td style="font-size:11px;color:var(--text2)">${projs}</td>
         <td style="display:flex;gap:6px">
           <button class="btn btn-ghost btn-sm" onclick="openEditVendor('${d.id}')">編輯</button>
@@ -1191,6 +1258,8 @@ window.saveProject = async () => {
     name,
     type: document.getElementById('p-type').value,
     area: document.getElementById('p-area').value,
+    address: document.getElementById('p-address').value,
+    detail: document.getElementById('p-detail').value,
     status: '規劃中',
     planStart, planEnd,
     planDays: document.getElementById('p-plan-days').value||'',
@@ -1199,7 +1268,8 @@ window.saveProject = async () => {
     createdAt: serverTimestamp()
   });
   closeModal('addProject');
-  ['p-name','p-area','p-plan-start','p-plan-end','p-plan-days','p-real-start','p-real-end','p-real-days'].forEach(id=>document.getElementById(id).value='');
+  ['p-name','p-area','p-address','p-plan-start','p-plan-end','p-plan-days','p-real-start','p-real-end','p-real-days'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-detail').value='';
   // Create template and auto-expand
   await createProjectTemplate(ref.id);
   setTimeout(() => {
@@ -1265,7 +1335,8 @@ window.openEditProject = (id) => {
   document.getElementById('ep-area').value = p.area||'';
   const typeEl = document.getElementById('ep-type');
   [...typeEl.options].forEach(o => o.selected = o.value === p.type);
-  document.getElementById('ep-plan-start').value = p.planStart||'';
+  document.getElementById('ep-address').value = p.address||'';
+  document.getElementById('ep-detail').value = p.detail||'';
   document.getElementById('ep-plan-end').value = p.planEnd||'';
   document.getElementById('ep-plan-days').value = p.planDays||'';
   document.getElementById('ep-real-start').value = p.realStart||'';
@@ -1335,6 +1406,8 @@ window.updateProject = async () => {
   const realStart = document.getElementById('ep-real-start').value;
   const realEnd = document.getElementById('ep-real-end').value;
   await updateDoc(doc(db,'projects',id), {
+    address: document.getElementById('ep-address').value,
+    detail: document.getElementById('ep-detail').value,
     name: document.getElementById('ep-name').value,
     type: document.getElementById('ep-type').value,
     area: document.getElementById('ep-area').value,
