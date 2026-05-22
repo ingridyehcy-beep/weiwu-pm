@@ -147,11 +147,13 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 .proj-card-header {
   display: grid;
   grid-template-columns: 36px 24px 220px 1fr auto auto auto;
-  align-items: center;
+  align-items: start;
   gap: 12px;
   padding: 16px 18px;
   cursor: pointer;
 }
+.proj-card-header > * { padding-top: 2px; }
+.proj-card-expand { margin-top: 1px; }
 .proj-card-expand {
   width: 28px; height: 28px; border-radius: 8px;
   background: var(--surface2); border: 1px solid var(--border);
@@ -2092,23 +2094,38 @@ function listenTrades(projId, projName) {
     // ── Update proj-card meta (phase / trade badge) ──
     const cardEl = document.getElementById(`proj-card-${projId}`);
     if (cardEl) {
+      const p = window._cache.projects[projId] || {};
+      const pct = autoPct !== null ? autoPct : (parseInt(p.pct)||0);
+      const color = pct>80?'var(--green)':pct>50?'var(--blue)':'var(--yellow)';
+
+      // Rebuild meta line
       const cardMetaEl = cardEl.querySelector('.proj-card-meta');
       if (cardMetaEl) {
-        const p = window._cache.projects[projId] || {};
-        const pct = autoPct !== null ? autoPct : (parseInt(p.pct)||0);
-        const color = pct>80?'var(--green)':pct>50?'var(--blue)':'var(--yellow)';
-        // Rebuild meta line
         cardMetaEl.innerHTML = `
           ${statusBadge(p.type||'住宅')}
           <span style="color:var(--text3);font-size:12px">${p.area||'—'} 坪</span>
           ${currentPhase && currentPhase !== '—' ? `<span style="font-size:11px;color:var(--text3)">｜</span><span style="font-size:11px;color:var(--text3)">${currentPhase}</span><span style="font-size:13px;color:var(--accent);font-weight:600;margin-left:4px">${currentTradeName !== '—' ? currentTradeName : ''}</span>` : ''}
         `;
-        // Update progress bar in card
-        const cardProgress = cardEl.querySelector('.progress-fill');
-        if (cardProgress) cardProgress.style.width = pct + '%';
-        const cardProgressLabel = cardEl.querySelector('.progress-label');
-        if (cardProgressLabel) cardProgressLabel.textContent = pct + '%';
       }
+
+      // Update status badge
+      const cardStatusCell = document.getElementById(`status-cell-${projId}`);
+      if (cardStatusCell) {
+        let cardAutoStatus = '規劃中';
+        if (currentPhase === '設計階段') cardAutoStatus = '規劃中';
+        else if (currentPhase === '工程階段') {
+          if (currentTradeName === '點交') cardAutoStatus = '完工';
+          else if (currentTradeName === '收尾') cardAutoStatus = '收尾中';
+          else cardAutoStatus = '施工中';
+        }
+        cardStatusCell.innerHTML = statusBadge(cardAutoStatus);
+      }
+
+      // Update progress bar in card
+      const cardProgress = cardEl.querySelector('.progress-fill');
+      if (cardProgress) cardProgress.style.width = pct + '%';
+      const cardProgressLabel = cardEl.querySelector('.progress-label');
+      if (cardProgressLabel) cardProgressLabel.textContent = pct + '%';
     }
 
     // ── Update calendar event progress selects dynamically ──
