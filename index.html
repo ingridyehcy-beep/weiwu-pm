@@ -264,11 +264,11 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <div id="tab-vendor" class="tab-content">
     <div class="section-header">
       <div class="section-title">廠商資料庫</div>
-      <button class="btn btn-primary btn-sm" onclick="openModal('addVendor')">＋ 新增廠商</button>
+      <button class="btn btn-primary btn-sm" onclick="populateVendorProjCheckboxes('v',[]);openModal('addVendor')">＋ 新增廠商</button>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>廠商名稱</th><th>類別</th><th>負責人</th><th>電話</th><th>備註</th><th>操作</th></tr></thead>
+        <thead><tr><th>廠商名稱</th><th>類別</th><th>負責人／窗口</th><th>電話</th><th>統編</th><th>銀行帳號</th><th>合作專案</th><th>操作</th></tr></thead>
         <tbody id="vendor-table"><tr><td colspan="6" class="loading">載入中...</td></tr></tbody>
       </table>
     </div>
@@ -597,13 +597,32 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 </div>
 
 <div class="modal-backdrop" id="modal-editVendor">
-  <div class="modal">
+  <div class="modal" style="width:620px">
     <div class="modal-title">✏️ 編輯廠商</div>
     <div class="form-grid">
-      <div class="form-row"><label>廠商名稱</label><input id="ev-name" placeholder="廠商名稱"></div>
-      <div class="form-row"><label>類別</label><input id="ev-cat" placeholder="例：水電工程"></div>
-      <div class="form-row"><label>負責人</label><input id="ev-contact" placeholder="姓名"></div>
-      <div class="form-row"><label>聯絡電話</label><input id="ev-phone" placeholder="09xx-xxx-xxx"></div>
+      <div class="form-row"><label>廠商名稱</label><input id="ev-name" placeholder="廠商名稱" autocomplete="off"></div>
+      <div class="form-row"><label>類別</label><input id="ev-cat" placeholder="例：衛浴設備" autocomplete="off"></div>
+      <div class="form-row"><label>負責人</label><input id="ev-contact" placeholder="姓名" autocomplete="off"></div>
+      <div class="form-row"><label>聯絡電話</label><input id="ev-phone" placeholder="09xx-xxx-xxx" autocomplete="off"></div>
+      <div class="form-row"><label>聯絡窗口</label><input id="ev-window" placeholder="業務/助理姓名" autocomplete="off"></div>
+      <div class="form-row"><label>公司統編</label><input id="ev-taxid" placeholder="8碼統一編號" autocomplete="off"></div>
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
+      <div class="form-grid">
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="ev-bank" placeholder="例：台灣銀行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="ev-branch" placeholder="例：信義分行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>帳號</label><input id="ev-account" placeholder="銀行帳號" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>合作專案（可複選）</label>
+      <div id="ev-proj-checkboxes" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px;max-height:120px;overflow-y:auto">
+        <div style="color:var(--text3);font-size:12px">載入專案中...</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="ev-proj-custom" placeholder="或自行填入其他專案名稱" autocomplete="off" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;flex:1">
+      </div>
     </div>
     <div class="form-row"><label>備註</label><textarea id="ev-note" rows="2" placeholder="合作紀錄..."></textarea></div>
     <input type="hidden" id="ev-id">
@@ -686,13 +705,32 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 </div>
 
 <div class="modal-backdrop" id="modal-addVendor">
-  <div class="modal">
+  <div class="modal" style="width:620px">
     <div class="modal-title">＋ 新增廠商</div>
     <div class="form-grid">
-      <div class="form-row"><label>廠商名稱</label><input id="v-name" placeholder="廠商名稱"></div>
-      <div class="form-row"><label>類別</label><input id="v-cat" placeholder="例：水電工程"></div>
-      <div class="form-row"><label>負責人</label><input id="v-contact" placeholder="姓名"></div>
-      <div class="form-row"><label>聯絡電話</label><input id="v-phone" placeholder="09xx-xxx-xxx"></div>
+      <div class="form-row"><label>廠商名稱</label><input id="v-name" placeholder="廠商名稱" autocomplete="off"></div>
+      <div class="form-row"><label>類別</label><input id="v-cat" placeholder="例：衛浴設備" autocomplete="off"></div>
+      <div class="form-row"><label>負責人</label><input id="v-contact" placeholder="姓名" autocomplete="off"></div>
+      <div class="form-row"><label>聯絡電話</label><input id="v-phone" placeholder="09xx-xxx-xxx" autocomplete="off"></div>
+      <div class="form-row"><label>聯絡窗口</label><input id="v-window" placeholder="業務/助理姓名" autocomplete="off"></div>
+      <div class="form-row"><label>公司統編</label><input id="v-taxid" placeholder="8碼統一編號" autocomplete="off"></div>
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
+      <div class="form-grid">
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="v-bank" placeholder="例：台灣銀行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="v-branch" placeholder="例：信義分行" autocomplete="off"></div>
+        <div class="form-row" style="margin:0"><label>帳號</label><input id="v-account" placeholder="銀行帳號" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>合作專案（可複選）</label>
+      <div id="v-proj-checkboxes" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px;max-height:120px;overflow-y:auto">
+        <div style="color:var(--text3);font-size:12px">載入專案中...</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="v-proj-custom" placeholder="或自行填入其他專案名稱" autocomplete="off" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;flex:1">
+      </div>
     </div>
     <div class="form-row"><label>備註</label><textarea id="v-note" rows="2" placeholder="合作紀錄..."></textarea></div>
     <div class="modal-actions">
@@ -800,6 +838,19 @@ async function createProjectTemplate(projId) {
       createdAt: serverTimestamp()
     });
   }
+}
+
+// ── Vendor Project Checkboxes ──
+function populateVendorProjCheckboxes(prefix, selected=[]) {
+  const projects = Object.values(window._cache.projects).map(p=>p.name).filter(Boolean);
+  const container = document.getElementById(`${prefix}-proj-checkboxes`);
+  if (!container) return;
+  if (!projects.length) { container.innerHTML = '<div style="color:var(--text3);font-size:12px">尚無專案</div>'; return; }
+  container.innerHTML = projects.map(name => `
+    <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px">
+      <input type="checkbox" value="${name}" ${selected.includes(name)?'checked':''} style="width:auto">
+      ${name}
+    </label>`).join('');
 }
 
 // ── Tab ──
@@ -1030,16 +1081,22 @@ function listenVendors() {
     snap.docs.forEach(d => window._cache.vendors[d.id] = d.data());
     document.getElementById('s-vendors').textContent = snap.docs.length;
     const tb = document.getElementById('vendor-table');
-    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">尚無廠商資料</td></tr>'; return; }
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">尚無廠商資料</td></tr>'; return; }
     tb.innerHTML = snap.docs.map(d => {
       const p = d.data();
+      const projs = (p.projects||[]).join('、') || '—';
       return `<tr>
         <td><strong>${p.name||''}</strong></td>
         <td style="color:var(--blue);font-size:12px">${p.cat||''}</td>
-        <td>${p.contact||'—'}</td>
+        <td>${p.contact||'—'}<br><span style="color:var(--text3);font-size:11px">${p.window?'窗口：'+p.window:''}</span></td>
         <td style="font-family:monospace">${p.phone||'—'}</td>
-        <td style="color:var(--text2);font-size:12px">${p.note||'—'}</td>
-        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditVendor('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('vendors','${d.id}')">刪除</button></td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.taxid||'—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${p.bank||'—'}${p.branch?' '+p.branch:''}<br><span style="font-family:monospace">${p.account||''}</span></td>
+        <td style="font-size:11px;color:var(--text2)">${projs}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditVendor('${d.id}')">編輯</button>
+          <button class="btn-danger" onclick="confirmDelete('vendors','${d.id}')">刪除</button>
+        </td>
       </tr>`;
     }).join('');
   });
@@ -1160,8 +1217,24 @@ window.saveIssue = async () => {
 
 window.saveVendor = async () => {
   const name = document.getElementById('v-name').value; if (!name) return;
-  await addDoc(collection(db,'vendors'), { name, cat:document.getElementById('v-cat').value, contact:document.getElementById('v-contact').value, phone:document.getElementById('v-phone').value, note:document.getElementById('v-note').value, createdAt:serverTimestamp() });
-  closeModal('addVendor'); ['v-name','v-cat','v-contact','v-phone','v-note'].forEach(id=>document.getElementById(id).value='');
+  const checkedProjs = [...document.querySelectorAll('#v-proj-checkboxes input[type=checkbox]:checked')].map(cb => cb.value);
+  const customProj = document.getElementById('v-proj-custom').value;
+  if (customProj) checkedProjs.push(customProj);
+  await addDoc(collection(db,'vendors'), {
+    name, cat:document.getElementById('v-cat').value,
+    contact:document.getElementById('v-contact').value,
+    phone:document.getElementById('v-phone').value,
+    window:document.getElementById('v-window').value,
+    taxid:document.getElementById('v-taxid').value,
+    bank:document.getElementById('v-bank').value,
+    branch:document.getElementById('v-branch').value,
+    account:document.getElementById('v-account').value,
+    projects: checkedProjs,
+    note:document.getElementById('v-note').value,
+    createdAt:serverTimestamp()
+  });
+  closeModal('addVendor');
+  ['v-name','v-cat','v-contact','v-phone','v-window','v-taxid','v-bank','v-branch','v-account','v-proj-custom','v-note'].forEach(id=>document.getElementById(id).value='');
 };
 
 window.saveExpense = async () => {
@@ -1208,7 +1281,14 @@ window.openEditVendor = (id) => {
   document.getElementById('ev-cat').value = p.cat||'';
   document.getElementById('ev-contact').value = p.contact||'';
   document.getElementById('ev-phone').value = p.phone||'';
+  document.getElementById('ev-window').value = p.window||'';
+  document.getElementById('ev-taxid').value = p.taxid||'';
+  document.getElementById('ev-bank').value = p.bank||'';
+  document.getElementById('ev-branch').value = p.branch||'';
+  document.getElementById('ev-account').value = p.account||'';
+  document.getElementById('ev-proj-custom').value = '';
   document.getElementById('ev-note').value = p.note||'';
+  populateVendorProjCheckboxes('ev', p.projects||[]);
   openModal('editVendor');
 };
 
@@ -1269,7 +1349,22 @@ window.updateProject = async () => {
 
 window.updateVendor = async () => {
   const id = document.getElementById('ev-id').value;
-  await updateDoc(doc(db,'vendors',id), { name:document.getElementById('ev-name').value, cat:document.getElementById('ev-cat').value, contact:document.getElementById('ev-contact').value, phone:document.getElementById('ev-phone').value, note:document.getElementById('ev-note').value });
+  const checkedProjs = [...document.querySelectorAll('#ev-proj-checkboxes input[type=checkbox]:checked')].map(cb => cb.value);
+  const customProj = document.getElementById('ev-proj-custom').value;
+  if (customProj) checkedProjs.push(customProj);
+  await updateDoc(doc(db,'vendors',id), {
+    name:document.getElementById('ev-name').value,
+    cat:document.getElementById('ev-cat').value,
+    contact:document.getElementById('ev-contact').value,
+    phone:document.getElementById('ev-phone').value,
+    window:document.getElementById('ev-window').value,
+    taxid:document.getElementById('ev-taxid').value,
+    bank:document.getElementById('ev-bank').value,
+    branch:document.getElementById('ev-branch').value,
+    account:document.getElementById('ev-account').value,
+    projects: checkedProjs,
+    note:document.getElementById('ev-note').value,
+  });
   closeModal('editVendor');
 };
 
