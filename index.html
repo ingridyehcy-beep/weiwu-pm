@@ -2089,6 +2089,28 @@ function listenTrades(projId, projName) {
       rowEl.querySelector('td:nth-child(12)').innerHTML = `<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="progress-label">${pct}%</div></div>`;
     }
 
+    // ── Update proj-card meta (phase / trade badge) ──
+    const cardEl = document.getElementById(`proj-card-${projId}`);
+    if (cardEl) {
+      const cardMetaEl = cardEl.querySelector('.proj-card-meta');
+      if (cardMetaEl) {
+        const p = window._cache.projects[projId] || {};
+        const pct = autoPct !== null ? autoPct : (parseInt(p.pct)||0);
+        const color = pct>80?'var(--green)':pct>50?'var(--blue)':'var(--yellow)';
+        // Rebuild meta line
+        cardMetaEl.innerHTML = `
+          ${statusBadge(p.type||'住宅')}
+          <span style="color:var(--text3);font-size:12px">${p.area||'—'} 坪</span>
+          ${currentPhase && currentPhase !== '—' ? `<span style="font-size:11px;color:var(--text3)">｜</span><span style="font-size:11px;color:var(--text3)">${currentPhase}</span><span style="font-size:13px;color:var(--accent);font-weight:600;margin-left:4px">${currentTradeName !== '—' ? currentTradeName : ''}</span>` : ''}
+        `;
+        // Update progress bar in card
+        const cardProgress = cardEl.querySelector('.progress-fill');
+        if (cardProgress) cardProgress.style.width = pct + '%';
+        const cardProgressLabel = cardEl.querySelector('.progress-label');
+        if (cardProgressLabel) cardProgressLabel.textContent = pct + '%';
+      }
+    }
+
     // ── Update calendar event progress selects dynamically ──
     updateCalProgressOptions();
 
