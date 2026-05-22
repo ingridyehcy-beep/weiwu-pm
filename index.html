@@ -264,12 +264,24 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <div id="tab-vendor" class="tab-content">
     <div class="section-header">
       <div class="section-title">廠商資料庫</div>
-      <button class="btn btn-primary btn-sm" onclick="populateVendorProjCheckboxes('v',[]);openModal('addVendor')">＋ 新增廠商</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="vendor-search" placeholder="🔍 搜尋廠商名稱、類別、專案..." oninput="renderVendorTable()"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 12px;color:var(--text);font-family:inherit;font-size:12px;width:240px">
+        <button class="btn btn-primary btn-sm" onclick="populateVendorProjCheckboxes('v',[]);openModal('addVendor')">＋ 新增廠商</button>
+      </div>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>廠商名稱</th><th>類別</th><th>電話</th><th>統編</th><th>銀行帳號</th><th>合作專案</th><th>操作</th></tr></thead>
-        <tbody id="vendor-table"><tr><td colspan="6" class="loading">載入中...</td></tr></tbody>
+        <thead><tr>
+          <th onclick="vendorSort('name')" style="cursor:pointer;user-select:none">廠商名稱 <span id="vs-name">⇅</span></th>
+          <th onclick="vendorSort('cat')" style="cursor:pointer;user-select:none">類別 <span id="vs-cat">⇅</span></th>
+          <th>電話</th>
+          <th>統編</th>
+          <th>銀行帳號</th>
+          <th onclick="vendorSort('projects')" style="cursor:pointer;user-select:none">合作專案 <span id="vs-projects">⇅</span></th>
+          <th>操作</th>
+        </tr></thead>
+        <tbody id="vendor-table"><tr><td colspan="7" class="loading">載入中...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -470,7 +482,13 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div class="form-grid">
       <div class="form-row"><label>階段</label><select id="t-phase" onchange="syncTradeNameOpts('t-phase','t-name')"><option>設計階段</option><option>工程階段</option></select></div>
       <div class="form-row"><label>工種名稱／狀態</label><select id="t-name"><option>初步諮詢</option><option>丈量</option><option>平面配置</option><option>3D示意</option><option>軟裝規劃</option><option>建材挑選</option><option>立面圖/施工圖</option><option>廠商詢價</option><option>工程報價</option></select></div>
-      <div class="form-row"><label>廠商</label><input id="t-vendor" placeholder="施工廠商名稱" autocomplete="off"></div>
+      <div class="form-row"><label>廠商</label>
+        <select id="t-vendor-select" onchange="handleTradeVendorSelect('t')" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;width:100%">
+          <option value="">— 選擇廠商 —</option>
+          <option value="__custom__">✏️ 自行填入</option>
+        </select>
+        <input id="t-vendor" placeholder="廠商名稱" autocomplete="off" style="display:none;margin-top:6px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;width:100%">
+      </div>
     </div>
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
@@ -505,7 +523,13 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div class="form-grid">
       <div class="form-row"><label>階段</label><select id="et-phase" onchange="syncTradeNameOpts('et-phase','et-name')"><option>設計階段</option><option>工程階段</option></select></div>
       <div class="form-row"><label>工種名稱／狀態</label><select id="et-name"><option>初步諮詢</option><option>丈量</option><option>平面配置</option><option>3D示意</option><option>軟裝規劃</option><option>建材挑選</option><option>立面圖/施工圖</option><option>廠商詢價</option><option>工程報價</option></select></div>
-      <div class="form-row"><label>廠商</label><input id="et-vendor" placeholder="施工廠商名稱" autocomplete="off"></div>
+      <div class="form-row"><label>廠商</label>
+        <select id="et-vendor-select" onchange="handleTradeVendorSelect('et')" style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;width:100%">
+          <option value="">— 選擇廠商 —</option>
+          <option value="__custom__">✏️ 自行填入</option>
+        </select>
+        <input id="et-vendor" placeholder="廠商名稱" autocomplete="off" style="display:none;margin-top:6px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;width:100%">
+      </div>
     </div>
     <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
@@ -866,6 +890,75 @@ async function createProjectTemplate(projId) {
   }
 }
 
+// ── Trade Vendor Select ──
+function updateTradeVendorSelects() {
+  const vendors = Object.values(window._cache.vendors).map(v => v.name).filter(Boolean).sort();
+  ['t','et'].forEach(prefix => {
+    const sel = document.getElementById(`${prefix}-vendor-select`);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— 選擇廠商 —</option>' +
+      vendors.map(n => `<option value="${n}"${cur===n?' selected':''}>${n}</option>`).join('') +
+      '<option value="__custom__">✏️ 自行填入</option>';
+  });
+}
+
+window.handleTradeVendorSelect = (prefix) => {
+  const sel = document.getElementById(`${prefix}-vendor-select`);
+  const input = document.getElementById(`${prefix}-vendor`);
+  if (sel.value === '__custom__') {
+    input.style.display = '';
+    input.value = '';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = sel.value;
+  }
+};
+
+function getTradeVendor(prefix) {
+  const sel = document.getElementById(`${prefix}-vendor-select`);
+  if (sel && sel.value && sel.value !== '__custom__') return sel.value;
+  return document.getElementById(`${prefix}-vendor`).value;
+}
+
+// ── Update vendor's 合作專案 when trade is saved ──
+async function updateVendorProjects(vendorName, projName) {
+  if (!vendorName || !projName) return;
+  const vendorEntry = Object.entries(window._cache.vendors).find(([id, v]) => v.name === vendorName);
+  if (!vendorEntry) return;
+  const [vid, vdata] = vendorEntry;
+  const projs = vdata.projects || [];
+  if (!projs.includes(projName)) {
+    await updateDoc(doc(db, 'vendors', vid), { projects: [...projs, projName] });
+  }
+}
+
+// ── Fix bank autocomplete ──
+window.bankAutocomplete = (bankInputId, branchInputId) => {
+  const bankEl = document.getElementById(bankInputId);
+  const branchEl = branchInputId ? document.getElementById(branchInputId) : null;
+
+  if (bankEl) {
+    const v = bankEl.value.trim();
+    if (v) {
+      const matched = TW_BANKS.find(b => b.name.includes(v) || v.includes(b.name) || b.code === v);
+      if (matched) {
+        bankEl.value = matched.name;
+      } else if (!v.endsWith('銀行') && !v.endsWith('郵政') && !v.endsWith('信合社')) {
+        bankEl.value = v + '銀行';
+      }
+    }
+  }
+
+  if (branchEl) {
+    const v = branchEl.value.trim();
+    if (v && !v.endsWith('分行') && !v.endsWith('總行') && !v.endsWith('支行') && !v.endsWith('辦事處')) {
+      branchEl.value = v + '分行';
+    }
+  }
+};
+
 // ── Taiwan Bank Code Database ──
 const TW_BANKS = [
   {code:'004',name:'台灣銀行'},{code:'005',name:'土地銀行'},{code:'006',name:'合作金庫'},
@@ -899,36 +992,7 @@ const TW_BRANCHES = {
   ],
 };
 
-window.bankAutocomplete = (bankInputId, branchInputId) => {
-  const bankEl = document.getElementById(bankInputId);
-  const branchEl = branchInputId ? document.getElementById(branchInputId) : null;
-  const bankVal = bankEl.value.trim();
-
-  if (bankVal) {
-    // Find matching bank
-    const matched = TW_BANKS.find(b =>
-      b.name.includes(bankVal) || bankVal.includes(b.name) || b.code === bankVal
-    );
-    if (matched) {
-      // Set full bank name with 銀行 suffix if not already there
-      bankEl.value = matched.name;
-    } else {
-      // If no match, ensure 銀行 suffix
-      if (bankVal && !bankVal.endsWith('銀行') && !bankVal.endsWith('郵政')) {
-        bankEl.value = bankVal + '銀行';
-      }
-    }
-  }
-
-  if (branchEl) {
-    const branchVal = branchEl.value.trim();
-    if (branchVal && !branchVal.endsWith('分行') && !branchVal.endsWith('總行') && !branchVal.endsWith('支行')) {
-      branchEl.value = branchVal + '分行';
-    }
-  }
-};
-
-// Simple bank name formatter for display
+// ── Simple bank name formatter for display ──
 function formatBankDisplay(bank, branch, account) {
   if (!bank && !account) return '—';
   let result = bank || '';
@@ -950,6 +1014,71 @@ window.populateVendorProjCheckboxes = function(prefix, selected=[]) {
     </label>`).join('');
 };
 
+// ── Vendor Sort & Filter ──
+let _vendorSortKey = 'name';
+let _vendorSortAsc = true;
+let _vendorData = [];
+
+window.vendorSort = (key) => {
+  if (_vendorSortKey === key) _vendorSortAsc = !_vendorSortAsc;
+  else { _vendorSortKey = key; _vendorSortAsc = true; }
+  // Update sort indicators
+  ['name','cat','projects'].forEach(k => {
+    const el = document.getElementById(`vs-${k}`);
+    if (el) el.textContent = k === _vendorSortKey ? (_vendorSortAsc ? '↑' : '↓') : '⇅';
+  });
+  renderVendorTable();
+};
+
+window.renderVendorTable = () => {
+  const search = (document.getElementById('vendor-search')?.value||'').toLowerCase();
+  const tb = document.getElementById('vendor-table');
+  if (!tb) return;
+
+  let data = [..._vendorData];
+
+  // Filter
+  if (search) {
+    data = data.filter(([id, p]) =>
+      (p.name||'').toLowerCase().includes(search) ||
+      (p.cat||'').toLowerCase().includes(search) ||
+      (p.projects||[]).join('').toLowerCase().includes(search) ||
+      (p.company||'').toLowerCase().includes(search)
+    );
+  }
+
+  // Sort
+  data.sort(([,a],[,b]) => {
+    let av = '', bv = '';
+    if (_vendorSortKey === 'projects') {
+      av = (a.projects||[]).join('、');
+      bv = (b.projects||[]).join('、');
+    } else {
+      av = (a[_vendorSortKey]||'').toString();
+      bv = (b[_vendorSortKey]||'').toString();
+    }
+    return _vendorSortAsc ? av.localeCompare(bv,'zh-TW') : bv.localeCompare(av,'zh-TW');
+  });
+
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="7" class="empty">${search?'找不到符合的廠商':'尚無廠商資料'}</td></tr>`; return; }
+
+  tb.innerHTML = data.map(([id, p]) => {
+    const projs = (p.projects||[]).join('、') || '—';
+    return `<tr>
+      <td><strong>${p.name||''}</strong></td>
+      <td style="color:var(--blue);font-size:12px">${p.cat||''}</td>
+      <td style="font-family:monospace">${p.phone||'—'}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.taxid||'—'}</td>
+      <td style="font-size:11px;color:var(--text2)">${p.company?`<span style="color:var(--text2)">${p.company}</span><br>`:''}${p.bank||''}${p.branch?'/'+p.branch:''}<br><span style="font-family:monospace;color:var(--text2)">${p.account||'—'}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${projs}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditVendor('${id}')">編輯</button>
+        <button class="btn-danger" onclick="confirmDelete('vendors','${id}')">刪除</button>
+      </td>
+    </tr>`;
+  }).join('');
+};
+
 // ── Tab ──
 window.switchTab = (id, el) => {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -961,7 +1090,7 @@ window.switchTab = (id, el) => {
 // ── Modal ──
 window.openModal = id => document.getElementById('modal-' + id).classList.add('open');
 window.closeModal = id => document.getElementById('modal-' + id).classList.remove('open');
-document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target===b) b.classList.remove('open'); }));
+// Modal backdrop click disabled - must use 取消 or 儲存變更 buttons
 
 // ── Project Card Drag & Drop ──
 let _projDragSrc = null;
@@ -1185,24 +1314,9 @@ function listenVendors() {
   onSnapshot(collection(db,'vendors'), snap => {
     snap.docs.forEach(d => window._cache.vendors[d.id] = d.data());
     document.getElementById('s-vendors').textContent = snap.docs.length;
-    const tb = document.getElementById('vendor-table');
-    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">尚無廠商資料</td></tr>'; return; }
-    tb.innerHTML = snap.docs.map(d => {
-      const p = d.data();
-      const projs = (p.projects||[]).join('、') || '—';
-      return `<tr>
-        <td><strong>${p.name||''}</strong></td>
-        <td style="color:var(--blue);font-size:12px">${p.cat||''}</td>
-        <td style="font-family:monospace">${p.phone||'—'}</td>
-        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.taxid||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${p.company?`<span style="color:var(--text2)">${p.company}</span><br>`:''}${p.bank||''}${p.branch?'/'+p.branch:''}<br><span style="font-family:monospace;color:var(--text2)">${p.account||'—'}</span></td>
-        <td style="font-size:11px;color:var(--text2)">${projs}</td>
-        <td style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" onclick="openEditVendor('${d.id}')">編輯</button>
-          <button class="btn-danger" onclick="confirmDelete('vendors','${d.id}')">刪除</button>
-        </td>
-      </tr>`;
-    }).join('');
+    updateTradeVendorSelects();
+    _vendorData = snap.docs.map(d => [d.id, d.data()]);
+    renderVendorTable();
   });
 }
 
@@ -1830,8 +1944,12 @@ window.openAddTrade = (projId, projName) => {
   ['t-plan-in','t-plan-out','t-real-in','t-real-out','t-note'].forEach(id => document.getElementById(id).value='');
   document.getElementById('t-plan-days').value='';
   document.getElementById('t-real-days').value='';
+  document.getElementById('t-vendor').value='';
+  document.getElementById('t-vendor').style.display='none';
   document.getElementById('t-phase').value='設計階段';
   syncTradeNameOpts('t-phase','t-name');
+  updateTradeVendorSelects();
+  document.getElementById('t-vendor-select').value='';
   openModal('addTrade');
 };
 
@@ -2078,7 +2196,9 @@ async function syncTradesToCalendar(projId, projName, tradeDocs) {
 
 window.saveTrade = async () => {
   const projId = document.getElementById('t-projId').value;
+  const projName = document.getElementById('t-projName').value;
   const name = document.getElementById('t-name').value; if(!name) return;
+  const vendor = getTradeVendor('t');
   const planIn = document.getElementById('t-plan-in').value;
   const planOut = document.getElementById('t-plan-out').value;
   const realIn = document.getElementById('t-real-in').value;
@@ -2086,12 +2206,12 @@ window.saveTrade = async () => {
   const planDays = await calcWorkDays(planIn, planOut);
   const realDays = await calcWorkDays(realIn, realOut);
   await addDoc(collection(db,`projects/${projId}/trades`), {
-    name, vendor:document.getElementById('t-vendor').value,
-    planIn, planOut, planDays,
+    name, vendor, planIn, planOut, planDays,
     realIn, realOut, realDays,
     note: document.getElementById('t-note').value,
     createdAt: serverTimestamp()
   });
+  if (vendor) await updateVendorProjects(vendor, projName);
   closeModal('addTrade');
 };
 
@@ -2099,7 +2219,6 @@ window.openEditTrade = (projId, tradeId) => {
   const t = window._cache.trades?.[tradeId]; if(!t) return;
   document.getElementById('et-id').value = tradeId;
   document.getElementById('et-projId').value = projId;
-  document.getElementById('et-vendor').value = t.vendor||'';
   document.getElementById('et-plan-in').value = t.planIn||'';
   document.getElementById('et-plan-out').value = t.planOut||'';
   document.getElementById('et-real-in').value = t.realIn||'';
@@ -2107,11 +2226,22 @@ window.openEditTrade = (projId, tradeId) => {
   document.getElementById('et-plan-days').value = t.planDays||'';
   document.getElementById('et-real-days').value = t.realDays||'';
   document.getElementById('et-note').value = t.note||'';
+  // Restore vendor select
+  updateTradeVendorSelects();
+  const vSel = document.getElementById('et-vendor-select');
+  const vInput = document.getElementById('et-vendor');
+  const vendorNames = Object.values(window._cache.vendors).map(v=>v.name);
+  if (t.vendor && vendorNames.includes(t.vendor)) {
+    vSel.value = t.vendor; vInput.style.display='none'; vInput.value=t.vendor;
+  } else if (t.vendor) {
+    vSel.value='__custom__'; vInput.style.display=''; vInput.value=t.vendor;
+  } else {
+    vSel.value=''; vInput.style.display='none'; vInput.value='';
+  }
   // Restore phase
   const isDesign = DESIGN_TRADE_OPTS.includes(t.name);
   document.getElementById('et-phase').value = isDesign ? '設計階段' : '工程階段';
   syncTradeNameOpts('et-phase', 'et-name', t.name);
-  // Update labels based on phase
   const inLbl = isDesign ? '開始' : '進場';
   const outLbl = isDesign ? '完成' : '退場';
   document.querySelector('label[for="et-plan-in"]') && (document.querySelector('label[for="et-plan-in"]').textContent = `預計${inLbl}`);
@@ -2124,6 +2254,8 @@ window.openEditTrade = (projId, tradeId) => {
 window.updateTrade = async () => {
   const id = document.getElementById('et-id').value;
   const projId = document.getElementById('et-projId').value;
+  const projName = window._cache.projects[projId]?.name || '';
+  const vendor = getTradeVendor('et');
   const planIn = document.getElementById('et-plan-in').value;
   const planOut = document.getElementById('et-plan-out').value;
   const realIn = document.getElementById('et-real-in').value;
@@ -2132,13 +2264,14 @@ window.updateTrade = async () => {
   const realDays = await calcWorkDays(realIn, realOut);
   await updateDoc(doc(db,`projects/${projId}/trades`,id), {
     name: document.getElementById('et-name').value,
-    vendor: document.getElementById('et-vendor').value,
-    planIn, planOut, planDays,
+    vendor, planIn, planOut, planDays,
     realIn, realOut, realDays,
     note: document.getElementById('et-note').value,
   });
+  if (vendor && projName) await updateVendorProjects(vendor, projName);
   closeModal('editTrade');
 };
+
 
 window.deleteTradeById = async () => {
   const id = document.getElementById('et-id').value;
