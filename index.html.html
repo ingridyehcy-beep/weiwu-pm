@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WEIWU 室內設計工程管理系統</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAXg6EEJ-tXCqQwvXA__LfHktFpG8NZ5KM",
+    authDomain: "weiwu-design-project.firebaseapp.com",
+    projectId: "weiwu-design-project",
+    storageBucket: "weiwu-design-project.firebasestorage.app",
+    messagingSenderId: "233483143595",
+    appId: "1:233483143595:web:405750339f60dc4040eaee",
+    measurementId: "G-S2NVFMQ4RZ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ── 全域狀態 ──
+  window.db = db;
+  window.fsLib = { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy };
+
+  window.addEventListener('DOMContentLoaded', () => { initApp(); });
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0e0f13; --surface: #161820; --surface2: #1e2028; --surface3: #252830;
+  --border: #2e313d; --accent: #e8c97a; --text: #e8e9f0; --text2: #8e91a8; --text3: #5e6178;
+  --red: #e87a7a; --green: #7ae8b8; --yellow: #e8c97a; --blue: #7ac4e8; --purple: #b87ae8;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; min-height: 100vh; }
+.header { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.logo { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; }
+.logo-dot { width:8px; height:8px; background:var(--accent); border-radius:50%; }
+.sync-status { font-size:11px; font-family:'DM Mono',monospace; color:var(--text3); }
+.sync-status.live { color:var(--green); }
+.nav-tabs { display:flex; gap:2px; padding:10px 24px 0; background:var(--surface); border-bottom:1px solid var(--border); overflow-x:auto; }
+.tab { padding:8px 16px; border:none; background:none; color:var(--text2); cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-size:13px; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; }
+.tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.tab:hover:not(.active) { color:var(--text); }
+.main { padding:20px 24px; max-width:1400px; margin:0 auto; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.stat-label { color:var(--text2); font-size:11px; margin-bottom:8px; text-transform:uppercase; letter-spacing:.08em; }
+.stat-value { font-size:26px; font-weight:700; font-family:'DM Mono',monospace; }
+.stat-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+.section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.section-title { font-size:14px; font-weight:600; }
+.section-title span { color:var(--text3); font-weight:400; margin-left:6px; font-size:12px; }
+.btn { padding:7px 14px; border-radius:7px; border:none; cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-size:12px; font-weight:500; transition:all .18s; display:inline-flex; align-items:center; gap:5px; }
+.btn-primary { background:var(--accent); color:#0e0f13; }
+.btn-primary:hover { background:#f0d98a; }
+.btn-ghost { background:var(--surface2); color:var(--text2); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--surface3); color:var(--text); }
+.btn-sm { padding:4px 10px; font-size:11px; border-radius:5px; }
+.btn-danger { background:rgba(232,122,122,.15); color:var(--red); border:1px solid rgba(232,122,122,.3); font-size:11px; padding:4px 10px; border-radius:5px; }
+.table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:20px; }
+table { width:100%; border-collapse:collapse; }
+thead th { text-align:left; padding:11px 14px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid var(--border); background:var(--surface2); font-weight:500; }
+tbody tr { border-bottom:1px solid rgba(46,49,61,.6); transition:background .15s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--surface2); }
+tbody td { padding:11px 14px; vertical-align:middle; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:11px; font-weight:500; }
+.badge-dot { width:5px; height:5px; border-radius:50%; }
+.badge-green { background:rgba(122,232,184,.12); color:var(--green); } .badge-green .badge-dot { background:var(--green); }
+.badge-yellow { background:rgba(232,201,122,.12); color:var(--yellow); } .badge-yellow .badge-dot { background:var(--yellow); }
+.badge-red { background:rgba(232,122,122,.12); color:var(--red); } .badge-red .badge-dot { background:var(--red); }
+.badge-blue { background:rgba(122,196,232,.12); color:var(--blue); } .badge-blue .badge-dot { background:var(--blue); }
+.badge-gray { background:rgba(94,97,120,.18); color:var(--text2); } .badge-gray .badge-dot { background:var(--text3); }
+.progress-wrap { display:flex; align-items:center; gap:10px; }
+.progress-bar { flex:1; height:4px; background:var(--surface3); border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:2px; }
+.progress-label { font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); min-width:30px; text-align:right; }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; }
+input, select, textarea { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:8px 12px; color:var(--text); font-family:'Noto Sans TC',sans-serif; font-size:13px; width:100%; transition:border-color .15s; }
+input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
+input::placeholder, textarea::placeholder { color:var(--text3); }
+label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; text-transform:uppercase; letter-spacing:.06em; }
+.form-row { margin-bottom:14px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(4px); z-index:200; align-items:center; justify-content:center; }
+.modal-backdrop.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:28px; width:520px; max-width:95vw; max-height:85vh; overflow-y:auto; }
+.modal-title { font-size:17px; font-weight:700; margin-bottom:20px; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+.loading { text-align:center; padding:40px; color:var(--text3); font-family:'DM Mono',monospace; }
+.empty { text-align:center; padding:40px; color:var(--text3); }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--surface3); border-radius:3px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.mt16 { margin-top:16px; }
+.export-bar { display:flex; gap:8px; margin-bottom:16px; }
+
+/* ── Calendar ── */
+.cal-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+.cal-nav { display:flex; align-items:center; gap:8px; }
+.cal-title { font-size:17px; font-weight:700; min-width:130px; text-align:center; }
+.cal-view-toggle { display:flex; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.cal-view-btn { padding:6px 14px; border:none; background:none; color:var(--text2); cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-size:12px; transition:all .2s; }
+.cal-view-btn.active { background:var(--accent); color:#0e0f13; font-weight:600; }
+.cal-filter { background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:6px 12px; color:var(--text); font-family:'Noto Sans TC',sans-serif; font-size:12px; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.cal-weekday { background:var(--surface2); padding:10px 8px; text-align:center; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border); font-weight:600; }
+.cal-day { background:var(--surface); min-height:110px; padding:8px 6px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); vertical-align:top; position:relative; transition:background .15s; }
+.cal-day:nth-child(7n) { border-right:none; }
+.cal-day:hover { background:var(--surface2); }
+.cal-day.other-month { background:var(--bg); }
+.cal-day.today .cal-day-num { background:var(--accent); color:#0e0f13; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.cal-day-num { font-size:12px; color:var(--text2); margin-bottom:4px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+.cal-event { padding:3px 6px; border-radius:4px; font-size:11px; margin-bottom:3px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:opacity .15s; }
+.cal-event:hover { opacity:.8; }
+.cal-add-btn { position:absolute; bottom:4px; right:4px; width:18px; height:18px; border-radius:50%; background:var(--surface3); border:none; color:var(--text3); cursor:pointer; font-size:14px; display:none; align-items:center; justify-content:center; line-height:1; }
+.cal-day:hover .cal-add-btn { display:flex; }
+
+/* Week view */
+.week-grid { display:grid; grid-template-columns:60px repeat(7,1fr); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.week-header { background:var(--surface2); padding:10px 8px; text-align:center; font-size:11px; color:var(--text3); border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+.week-header.today-col { color:var(--accent); font-weight:700; }
+.week-time { background:var(--surface2); border-right:1px solid var(--border); border-bottom:1px solid rgba(46,49,61,.4); padding:4px 6px; font-size:10px; color:var(--text3); font-family:'DM Mono',monospace; text-align:right; }
+.week-cell { border-right:1px solid var(--border); border-bottom:1px solid rgba(46,49,61,.4); min-height:36px; padding:2px 4px; position:relative; }
+.week-cell:nth-child(8n) { border-right:none; }
+.week-cell:hover { background:var(--surface2); }
+.week-event { padding:2px 5px; border-radius:3px; font-size:10px; margin-bottom:2px; cursor:pointer; }
+
+/* ── Project Cards ── */
+.proj-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.proj-card:hover { border-color: rgba(232,201,122,.3); }
+.proj-card-header {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
+}
+.proj-card-expand {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+  transition: all .2s; flex-shrink: 0;
+}
+.proj-card-expand:hover { background: var(--surface3); color: var(--text); }
+.proj-card-main { min-width: 0; }
+.proj-card-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.proj-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.proj-card-schedule {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 24px;
+  min-width: 320px;
+}
+.proj-card-schedule-row { font-size: 12px; }
+.proj-card-schedule-label { color: var(--text3); font-size: 11px; margin-bottom: 2px; }
+.proj-card-schedule-val { font-family: 'DM Mono', monospace; font-size: 12px; }
+.proj-card-progress { min-width: 160px; }
+.proj-card-progress-top { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+.proj-card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.proj-card-trade {
+  padding: 4px 16px 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.proj-card-trade-phase { font-size: 11px; color: var(--text3); }
+.proj-card-trade-name { font-size: 13px; color: var(--accent); font-weight: 600; }
+.proj-card-body {
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.proj-card-trade-panel { padding: 16px 18px; }
+.proj-card-trade-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.proj-card-trade-title { font-size: 12px; font-weight: 600; color: var(--text2); }
+
+.trade-panel { background:var(--surface2); border-top:1px solid var(--border); padding:16px 20px; }
+.trade-panel-title { font-size:12px; font-weight:600; color:var(--text2); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; }
+.trade-table { width:100%; border-collapse:collapse; font-size:12px; }
+.trade-table th { text-align:left; padding:6px 10px; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border); font-weight:500; background:var(--surface3); }
+.trade-table td { padding:8px 10px; border-bottom:1px solid rgba(46,49,61,.4); vertical-align:middle; }
+.trade-table tr:last-child td { border-bottom:none; }
+.trade-table tr:hover td { background:rgba(255,255,255,.02); }
+.days-badge { font-family:'DM Mono',monospace; font-size:11px; padding:2px 7px; border-radius:4px; background:var(--surface3); color:var(--text2); }
+.days-over { background:rgba(232,122,122,.15); color:var(--red); }
+.days-ok { background:rgba(122,232,184,.15); color:var(--green); }
+
+.ec-0 { background:rgba(122,196,232,.2); color:#7ac4e8; border-left:3px solid #7ac4e8; }
+.ec-1 { background:rgba(184,122,232,.2); color:#b87ae8; border-left:3px solid #b87ae8; }
+.ec-2 { background:rgba(122,232,184,.2); color:#7ae8b8; border-left:3px solid #7ae8b8; }
+.ec-3 { background:rgba(232,201,122,.2); color:#e8c97a; border-left:3px solid #e8c97a; }
+.ec-4 { background:rgba(232,122,122,.2); color:#e87a7a; border-left:3px solid #e87a7a; }
+.ec-5 { background:rgba(232,122,159,.2); color:#e87a9f; border-left:3px solid #e87a9f; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><div class="logo-dot"></div>WEIWU 室內設計工程管理</div>
+  <div class="sync-status live" id="sync-status">● 即時同步中</div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost btn-sm" onclick="exportExcel()">📊 匯出 Excel</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addProject')">＋ 新增專案</button>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab active" onclick="switchTab('progress',this)">📊 工程進度</button>
+  <button class="tab" onclick="switchTab('vendor',this)">🏢 廠商管理</button>
+  <button class="tab" onclick="switchTab('budget',this)">💰 費用預算</button>
+  <button class="tab" onclick="switchTab('material',this)">📦 材料清單</button>
+  <button class="tab" onclick="switchTab('claim',this)">📋 請款流程</button>
+  <button class="tab" onclick="switchTab('calendar',this)">📅 工程日曆</button>
+</div>
+
+<div class="main">
+
+  <!-- 工程進度 -->
+  <div id="tab-progress" class="tab-content active">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">進行中專案</div><div class="stat-value" style="color:var(--blue)" id="s-projects">—</div><div class="stat-sub">即時更新</div></div>
+      <div class="stat-card"><div class="stat-label">待處理問題</div><div class="stat-value" style="color:var(--red)" id="s-issues">—</div><div class="stat-sub">點「處理完畢」關閉</div></div>
+      <div class="stat-card"><div class="stat-label">廠商數量</div><div class="stat-value" style="color:var(--green)" id="s-vendors">—</div><div class="stat-sub">合作廠商</div></div>
+      <div class="stat-card"><div class="stat-label">材料項目</div><div class="stat-value" style="color:var(--yellow)" id="s-materials">—</div><div class="stat-sub">庫存追蹤中</div></div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">工程專案總覽</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addProject')">＋ 新增專案</button>
+    </div>
+    <div id="project-cards"></div>
+
+    <div class="section-header">
+      <div class="section-title">待處理問題</div>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('addIssue')">＋ 新增問題</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>問題描述</th><th>所屬專案</th><th>嚴重程度</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody id="issue-table"><tr><td colspan="5" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 廠商管理 -->
+  <div id="tab-vendor" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">廠商資料庫</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addVendor')">＋ 新增廠商</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>廠商名稱</th><th>類別</th><th>負責人</th><th>電話</th><th>備註</th><th>操作</th></tr></thead>
+        <tbody id="vendor-table"><tr><td colspan="6" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 費用預算 -->
+  <div id="tab-budget" class="tab-content">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">總支出</div><div class="stat-value" style="color:var(--red)" id="s-total-expense">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">已付款</div><div class="stat-value" style="color:var(--green)" id="s-paid">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">待付款</div><div class="stat-value" style="color:var(--yellow)" id="s-pending">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">逾期未付</div><div class="stat-value" style="color:var(--red)" id="s-overdue">NT$0</div></div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">費用明細</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addExpense')">＋ 新增費用</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>項目</th><th>所屬專案</th><th>金額</th><th>日期</th><th>付款狀態</th><th>操作</th></tr></thead>
+        <tbody id="expense-table"><tr><td colspan="6" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 材料清單 -->
+  <div id="tab-material" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">材料庫存清單</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addMaterial')">＋ 新增材料</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>材料名稱</th><th>規格</th><th>數量</th><th>單價</th><th>小計</th><th>所屬專案</th><th>到貨狀態</th><th>操作</th></tr></thead>
+        <tbody id="material-table"><tr><td colspan="8" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 請款流程 -->
+  <div id="tab-claim" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">請款單管理</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addClaim')">＋ 新增請款單</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>請款單號</th><th>所屬專案</th><th>廠商</th><th>金額</th><th>申請日期</th><th>預計付款日</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody id="claim-table"><tr><td colspan="8" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 工程日曆 -->
+  <div id="tab-calendar" class="tab-content">
+    <div class="cal-toolbar">
+      <div class="cal-nav">
+        <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">‹</button>
+        <div class="cal-title" id="cal-title">—</div>
+        <button class="btn btn-ghost btn-sm" onclick="calNav(1)">›</button>
+        <button class="btn btn-ghost btn-sm" onclick="calToday()">今天</button>
+      </div>
+      <div class="cal-view-toggle">
+        <button class="cal-view-btn active" id="vbtn-month" onclick="setCalView('month')">月</button>
+        <button class="cal-view-btn" id="vbtn-week" onclick="setCalView('week')">週</button>
+      </div>
+      <select class="cal-filter" id="cal-filter" onchange="renderCal()">
+        <option value="">全部專案</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="updateEventProjSelects();setEventType('event');openModal('addEvent')">＋ 新增</button>
+    </div>
+    <div id="cal-container"></div>
+  </div>
+
+</div>
+<!-- ── Modals ── -->
+
+<!-- Add Event -->
+<div class="modal-backdrop" id="modal-addEvent">
+  <div class="modal" style="width:580px">
+    <!-- Type toggle -->
+    <div style="display:flex;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px">
+      <button id="ev-type-btn-event" onclick="setEventType('event')" style="flex:1;padding:10px;border:none;background:var(--accent);color:#0e0f13;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">📌 工程事件</button>
+      <button id="ev-type-btn-meeting" onclick="setEventType('meeting')" style="flex:1;padding:10px;border:none;background:none;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">🤝 會議</button>
+    </div>
+    <input type="hidden" id="ev2-type" value="event">
+
+    <!-- Title + DateTime row -->
+    <div class="form-grid">
+      <div class="form-row"><label id="ev2-name-label">事件名稱</label><input id="ev2-name" placeholder="例：廚具進場"></div>
+      <div class="form-row"><label>日期</label><input id="ev2-date" type="date"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>開始時間</label><input id="ev2-time-start" type="time" placeholder="09:00"></div>
+      <div class="form-row"><label>結束時間</label><input id="ev2-time-end" type="time" placeholder="10:00"></div>
+    </div>
+
+    <!-- Project selector -->
+    <div class="form-grid">
+      <div class="form-row">
+        <label>案件名稱</label>
+        <select id="ev2-proj-select" onchange="handleEventProjSelect('ev2')">
+          <option value="">— 選擇專案 —</option>
+          <option value="__custom__">✏️ 自行填入</option>
+        </select>
+      </div>
+      <div class="form-row" id="ev2-proj-custom-row" style="display:none">
+        <label>自行填入專案名稱</label>
+        <input id="ev2-proj-custom" placeholder="請輸入專案名稱">
+      </div>
+      <div class="form-row" id="ev2-proj-hidden-row">
+        <label>案件進度</label>
+        <select id="ev2-progress"><option>（載入工種中...）</option></select>
+      </div>
+    </div>
+
+    <!-- Event-only fields -->
+    <div id="ev2-event-fields">
+      <div class="form-grid">
+        <div class="form-row"><label>工種</label><input id="ev2-trade" placeholder="例：3M隔熱紙-富懋施工"></div>
+        <div class="form-row"><label>款項</label><select id="ev2-payment"><option>尚未發包</option><option>已發包</option><option>備料中</option><option>已付訂金</option><option>已付尾款</option></select></div>
+      </div>
+    </div>
+
+    <!-- Meeting-only fields -->
+    <div id="ev2-meeting-fields" style="display:none">
+      <div class="form-row"><label>出席人員</label><input id="ev2-attendees" placeholder="例：小明、小華、設計師王"></div>
+      <div class="form-row"><label>會議地點</label><input id="ev2-location" placeholder="例：工地現場 / 線上 Zoom"></div>
+    </div>
+
+    <div class="form-row"><label>備註</label><textarea id="ev2-note" rows="2" placeholder="補充說明..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addEvent')">取消</button>
+      <button class="btn btn-primary" onclick="saveEvent()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Event -->
+<div class="modal-backdrop" id="modal-editEvent">
+  <div class="modal" style="width:580px">
+    <div style="display:flex;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px">
+      <button id="ee-type-btn-event" onclick="setEditEventType('event')" style="flex:1;padding:10px;border:none;background:var(--accent);color:#0e0f13;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">📌 工程事件</button>
+      <button id="ee-type-btn-meeting" onclick="setEditEventType('meeting')" style="flex:1;padding:10px;border:none;background:none;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">🤝 會議</button>
+    </div>
+    <input type="hidden" id="ee2-type" value="event">
+    <input type="hidden" id="ee2-id">
+
+    <div class="form-grid">
+      <div class="form-row"><label id="ee2-name-label">事件名稱</label><input id="ee2-name" placeholder="例：廚具進場"></div>
+      <div class="form-row"><label>日期</label><input id="ee2-date" type="date"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>開始時間</label><input id="ee2-time-start" type="time"></div>
+      <div class="form-row"><label>結束時間</label><input id="ee2-time-end" type="time"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label>案件名稱</label>
+        <select id="ee2-proj-select" onchange="handleEventProjSelect('ee2')">
+          <option value="">— 選擇專案 —</option>
+          <option value="__custom__">✏️ 自行填入</option>
+        </select>
+      </div>
+      <div class="form-row" id="ee2-proj-custom-row" style="display:none">
+        <label>自行填入專案名稱</label>
+        <input id="ee2-proj-custom" placeholder="請輸入專案名稱">
+      </div>
+      <div class="form-row" id="ee2-proj-hidden-row">
+        <label>案件進度</label>
+        <select id="ee2-progress"><option>（載入工種中...）</option></select>
+      </div>
+    </div>
+    <div id="ee2-event-fields">
+      <div class="form-grid">
+        <div class="form-row"><label>工種</label><input id="ee2-trade" placeholder="例：3M隔熱紙-富懋施工"></div>
+        <div class="form-row"><label>款項</label><select id="ee2-payment"><option>尚未發包</option><option>已發包</option><option>備料中</option><option>已付訂金</option><option>已付尾款</option></select></div>
+      </div>
+    </div>
+    <div id="ee2-meeting-fields" style="display:none">
+      <div class="form-row"><label>出席人員</label><input id="ee2-attendees" placeholder="例：小明、小華、設計師王"></div>
+      <div class="form-row"><label>會議地點</label><input id="ee2-location" placeholder="例：工地現場 / 線上 Zoom"></div>
+    </div>
+    <div class="form-row"><label>備註</label><textarea id="ee2-note" rows="2" placeholder="補充說明..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="deleteEventById()">刪除</button>
+      <button class="btn btn-ghost" onclick="closeModal('editEvent')">取消</button>
+      <button class="btn btn-primary" onclick="updateEvent()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Trade -->
+<div class="modal-backdrop" id="modal-addTrade">
+  <div class="modal" style="width:600px">
+    <div class="modal-title">🔨 新增工種時程</div>
+    <input type="hidden" id="t-projId">
+    <input type="hidden" id="t-projName">
+    <div class="form-grid">
+      <div class="form-row"><label>階段</label><select id="t-phase" onchange="syncTradeNameOpts('t-phase','t-name')"><option>設計階段</option><option>工程階段</option></select></div>
+      <div class="form-row"><label>工種名稱／狀態</label><select id="t-name"><option>初步諮詢</option><option>丈量</option><option>平面配置</option><option>3D示意</option><option>軟裝規劃</option><option>建材挑選</option><option>立面圖/施工圖</option><option>廠商詢價</option><option>工程報價</option></select></div>
+      <div class="form-row"><label>廠商</label><input id="t-vendor" placeholder="施工廠商名稱" autocomplete="off"></div>
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>預計進場</label><input id="t-plan-in" type="date" onchange="calcDays('plan')"></div>
+        <div class="form-row" style="margin:0"><label>預計退場</label><input id="t-plan-out" type="date" onchange="calcDays('plan')"></div>
+        <div class="form-row" style="margin:0"><label>預計工作天數</label><input id="t-plan-days" type="number" placeholder="自動計算" readonly style="color:var(--accent)"></div>
+      </div>
+    </div>
+    <div style="background:rgba(122,232,184,.06);border:1px solid rgba(122,232,184,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">✅ 實際時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>實際進場</label><input id="t-real-in" type="date" onchange="calcDays('real')"></div>
+        <div class="form-row" style="margin:0"><label>實際退場</label><input id="t-real-out" type="date" onchange="calcDays('real')"></div>
+        <div class="form-row" style="margin:0"><label>實際工作天數</label><input id="t-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:4px"><label>備註</label><textarea id="t-note" rows="2" placeholder="補充說明..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addTrade')">取消</button>
+      <button class="btn btn-primary" onclick="saveTrade()">新增工種</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Trade -->
+<div class="modal-backdrop" id="modal-editTrade">
+  <div class="modal" style="width:600px">
+    <div class="modal-title">✏️ 編輯工種時程</div>
+    <input type="hidden" id="et-id">
+    <input type="hidden" id="et-projId">
+    <div class="form-grid">
+      <div class="form-row"><label>階段</label><select id="et-phase" onchange="syncTradeNameOpts('et-phase','et-name')"><option>設計階段</option><option>工程階段</option></select></div>
+      <div class="form-row"><label>工種名稱／狀態</label><select id="et-name"><option>初步諮詢</option><option>丈量</option><option>平面配置</option><option>3D示意</option><option>軟裝規劃</option><option>建材挑選</option><option>立面圖/施工圖</option><option>廠商詢價</option><option>工程報價</option></select></div>
+      <div class="form-row"><label>廠商</label><input id="et-vendor" placeholder="施工廠商名稱" autocomplete="off"></div>
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label for="et-plan-in">預計進場</label><input id="et-plan-in" type="date" onchange="calcDaysEdit('plan')"></div>
+        <div class="form-row" style="margin:0"><label for="et-plan-out">預計退場</label><input id="et-plan-out" type="date" onchange="calcDaysEdit('plan')"></div>
+        <div class="form-row" style="margin:0"><label>預計工作天數</label><input id="et-plan-days" type="number" placeholder="自動計算" readonly style="color:var(--accent)"></div>
+      </div>
+    </div>
+    <div style="background:rgba(122,232,184,.06);border:1px solid rgba(122,232,184,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">✅ 實際時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label for="et-real-in">實際進場</label><input id="et-real-in" type="date" onchange="calcDaysEdit('real')"></div>
+        <div class="form-row" style="margin:0"><label for="et-real-out">實際退場</label><input id="et-real-out" type="date" onchange="calcDaysEdit('real')"></div>
+        <div class="form-row" style="margin:0"><label>實際工作天數</label><input id="et-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:4px"><label>備註</label><textarea id="et-note" rows="2" placeholder="補充說明..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="deleteTradeById()">刪除</button>
+      <button class="btn btn-ghost" onclick="closeModal('editTrade')">取消</button>
+      <button class="btn btn-primary" onclick="updateTrade()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addProject">
+  <div class="modal" style="width:620px">
+    <div class="modal-title">＋ 新增工程專案</div>
+    <div class="form-grid">
+      <div class="form-row"><label>專案名稱</label><input id="p-name" placeholder="例：大安區李宅"></div>
+      <div class="form-row"><label>類型</label><select id="p-type"><option>微物內部事項</option><option>辦公室</option><option>老屋翻新</option><option>新成屋</option><option>客變</option><option>專櫃</option><option>街邊店</option><option>接待會所</option><option>展場</option></select></div>
+      <div class="form-row"><label>坪數</label><input id="p-area" type="number" placeholder="坪"></div>
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>預計開工</label><input id="p-plan-start" type="date" onchange="calcProjDays('p')"></div>
+        <div class="form-row" style="margin:0"><label>預計完工</label><input id="p-plan-end" type="date" onchange="calcProjDays('p')"></div>
+        <div class="form-row" style="margin:0"><label>預計天數</label><input id="p-plan-days" type="number" placeholder="自動計算" readonly style="color:var(--accent)"></div>
+      </div>
+    </div>
+    <div style="background:rgba(122,232,184,.06);border:1px solid rgba(122,232,184,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">✅ 實際時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>實際開工</label><input id="p-real-start" type="date" onchange="calcProjDays('p')"></div>
+        <div class="form-row" style="margin:0"><label>實際完工</label><input id="p-real-end" type="date" onchange="calcProjDays('p')"></div>
+        <div class="form-row" style="margin:0"><label>實際天數</label><input id="p-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addProject')">取消</button>
+      <button class="btn btn-primary" onclick="saveProject()">建立專案</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-editProject">
+  <div class="modal" style="width:620px">
+    <div class="modal-title">✏️ 編輯工程專案</div>
+    <div class="form-grid">
+      <div class="form-row"><label>專案名稱</label><input id="ep-name" placeholder="例：大安區李宅"></div>
+      <div class="form-row"><label>類型</label><select id="ep-type"><option>微物內部事項</option><option>辦公室</option><option>老屋翻新</option><option>新成屋</option><option>客變</option><option>專櫃</option><option>街邊店</option><option>接待會所</option><option>展場</option></select></div>
+      <div class="form-row"><label>坪數</label><input id="ep-area" type="number" placeholder="坪"></div>
+      <input type="hidden" id="ep-status" value="規劃中">
+    </div>
+    <div style="background:rgba(122,196,232,.06);border:1px solid rgba(122,196,232,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">📅 預計時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>預計開工</label><input id="ep-plan-start" type="date" onchange="calcProjDays('ep')"></div>
+        <div class="form-row" style="margin:0"><label>預計完工</label><input id="ep-plan-end" type="date" onchange="calcProjDays('ep')"></div>
+        <div class="form-row" style="margin:0"><label>預計天數</label><input id="ep-plan-days" type="number" placeholder="自動計算" readonly style="color:var(--accent)"></div>
+      </div>
+    </div>
+    <div style="background:rgba(122,232,184,.06);border:1px solid rgba(122,232,184,.2);border-radius:8px;padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">✅ 實際時程</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="form-row" style="margin:0"><label>實際開工</label><input id="ep-real-start" type="date" onchange="calcProjDays('ep')"></div>
+        <div class="form-row" style="margin:0"><label>實際完工</label><input id="ep-real-end" type="date" onchange="calcProjDays('ep')"></div>
+        <div class="form-row" style="margin:0"><label>實際天數</label><input id="ep-real-days" type="number" placeholder="自動計算" readonly style="color:var(--green)"></div>
+      </div>
+    </div>
+    <input type="hidden" id="ep-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editProject')">取消</button>
+      <button class="btn btn-primary" onclick="updateProject()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-editVendor">
+  <div class="modal">
+    <div class="modal-title">✏️ 編輯廠商</div>
+    <div class="form-grid">
+      <div class="form-row"><label>廠商名稱</label><input id="ev-name" placeholder="廠商名稱"></div>
+      <div class="form-row"><label>類別</label><input id="ev-cat" placeholder="例：水電工程"></div>
+      <div class="form-row"><label>負責人</label><input id="ev-contact" placeholder="姓名"></div>
+      <div class="form-row"><label>聯絡電話</label><input id="ev-phone" placeholder="09xx-xxx-xxx"></div>
+    </div>
+    <div class="form-row"><label>備註</label><textarea id="ev-note" rows="2" placeholder="合作紀錄..."></textarea></div>
+    <input type="hidden" id="ev-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editVendor')">取消</button>
+      <button class="btn btn-primary" onclick="updateVendor()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-editExpense">
+  <div class="modal">
+    <div class="modal-title">✏️ 編輯費用</div>
+    <div class="form-grid">
+      <div class="form-row"><label>費用項目</label><input id="ee-name" placeholder="例：泥作工程款"></div>
+      <div class="form-row"><label>所屬專案</label><input id="ee-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>金額 (NT$)</label><input id="ee-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>日期</label><input id="ee-date" type="date"></div>
+      <div class="form-row"><label>付款狀態</label><select id="ee-status"><option>待付款</option><option>已付款</option><option>逾期</option></select></div>
+    </div>
+    <input type="hidden" id="ee-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editExpense')">取消</button>
+      <button class="btn btn-primary" onclick="updateExpense()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-editMaterial">
+  <div class="modal">
+    <div class="modal-title">✏️ 編輯材料</div>
+    <div class="form-grid">
+      <div class="form-row"><label>材料名稱</label><input id="em-name" placeholder="例：超耐磨木地板"></div>
+      <div class="form-row"><label>規格</label><input id="em-spec" placeholder="例：60×120cm"></div>
+      <div class="form-row"><label>數量</label><input id="em-qty" type="number" placeholder="0"></div>
+      <div class="form-row"><label>單位</label><input id="em-unit" placeholder="片/箱/組/顆"></div>
+      <div class="form-row"><label>單價 (NT$)</label><input id="em-price" type="number" placeholder="0"></div>
+      <div class="form-row"><label>所屬專案</label><input id="em-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>到貨狀態</label><select id="em-status"><option>待訂購</option><option>製作中</option><option>運送中</option><option>已到貨</option></select></div>
+    </div>
+    <input type="hidden" id="em-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editMaterial')">取消</button>
+      <button class="btn btn-primary" onclick="updateMaterial()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-editClaim">
+  <div class="modal">
+    <div class="modal-title">✏️ 編輯請款單</div>
+    <div class="form-grid">
+      <div class="form-row"><label>所屬專案</label><input id="ec-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>廠商名稱</label><input id="ec-vendor" placeholder="廠商名稱"></div>
+      <div class="form-row"><label>請款金額 (NT$)</label><input id="ec-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>預計付款日</label><input id="ec-paydate" type="date"></div>
+      <div class="form-row"><label>請款狀態</label><select id="ec-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
+    </div>
+    <input type="hidden" id="ec-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editClaim')">取消</button>
+      <button class="btn btn-primary" onclick="updateClaim()">儲存變更</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addIssue">
+  <div class="modal">
+    <div class="modal-title">＋ 新增問題</div>
+    <div class="form-row"><label>問題描述</label><textarea id="i-desc" rows="3" placeholder="描述問題..."></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label>所屬專案</label><input id="i-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>嚴重程度</label><select id="i-level"><option>緊急</option><option>一般</option><option>輕微</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addIssue')">取消</button>
+      <button class="btn btn-primary" onclick="saveIssue()">新增問題</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addVendor">
+  <div class="modal">
+    <div class="modal-title">＋ 新增廠商</div>
+    <div class="form-grid">
+      <div class="form-row"><label>廠商名稱</label><input id="v-name" placeholder="廠商名稱"></div>
+      <div class="form-row"><label>類別</label><input id="v-cat" placeholder="例：水電工程"></div>
+      <div class="form-row"><label>負責人</label><input id="v-contact" placeholder="姓名"></div>
+      <div class="form-row"><label>聯絡電話</label><input id="v-phone" placeholder="09xx-xxx-xxx"></div>
+    </div>
+    <div class="form-row"><label>備註</label><textarea id="v-note" rows="2" placeholder="合作紀錄..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addVendor')">取消</button>
+      <button class="btn btn-primary" onclick="saveVendor()">新增廠商</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addExpense">
+  <div class="modal">
+    <div class="modal-title">＋ 新增費用</div>
+    <div class="form-grid">
+      <div class="form-row"><label>費用項目</label><input id="e-name" placeholder="例：泥作工程款"></div>
+      <div class="form-row"><label>所屬專案</label><input id="e-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>金額 (NT$)</label><input id="e-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>日期</label><input id="e-date" type="date"></div>
+      <div class="form-row"><label>付款狀態</label><select id="e-status"><option>待付款</option><option>已付款</option><option>逾期</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addExpense')">取消</button>
+      <button class="btn btn-primary" onclick="saveExpense()">新增費用</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addMaterial">
+  <div class="modal">
+    <div class="modal-title">＋ 新增材料</div>
+    <div class="form-grid">
+      <div class="form-row"><label>材料名稱</label><input id="m-name" placeholder="例：超耐磨木地板"></div>
+      <div class="form-row"><label>規格</label><input id="m-spec" placeholder="例：60×120cm"></div>
+      <div class="form-row"><label>數量</label><input id="m-qty" type="number" placeholder="0"></div>
+      <div class="form-row"><label>單位</label><input id="m-unit" placeholder="片/箱/組/顆"></div>
+      <div class="form-row"><label>單價 (NT$)</label><input id="m-price" type="number" placeholder="0"></div>
+      <div class="form-row"><label>所屬專案</label><input id="m-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>到貨狀態</label><select id="m-status"><option>待訂購</option><option>製作中</option><option>運送中</option><option>已到貨</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addMaterial')">取消</button>
+      <button class="btn btn-primary" onclick="saveMaterial()">新增材料</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-addClaim">
+  <div class="modal">
+    <div class="modal-title">＋ 新增請款單</div>
+    <div class="form-grid">
+      <div class="form-row"><label>所屬專案</label><input id="c-proj" placeholder="專案名稱"></div>
+      <div class="form-row"><label>廠商名稱</label><input id="c-vendor" placeholder="廠商名稱"></div>
+      <div class="form-row"><label>請款金額 (NT$)</label><input id="c-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>預計付款日</label><input id="c-paydate" type="date"></div>
+      <div class="form-row"><label>請款狀態</label><select id="c-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addClaim')">取消</button>
+      <button class="btn btn-primary" onclick="saveClaim()">送出請款</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// Re-import for script module scope
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+const db = getFirestore(getApp());
+
+// ── Global Data Cache (for edit lookups) ──
+window._cache = { projects:{}, vendors:{}, expenses:{}, materials:{}, claims:{} };
+window._projMeta = {}; // auto-computed per project from trades
+
+window.confirmDelete = async (col, id) => {
+  if (!confirm('確定要刪除嗎？此操作無法復原。')) return;
+  await deleteDoc(doc(db, col, id));
+};
+
+// ── Project-level schedule auto-calc ──
+window.calcProjDays = async (prefix) => {
+  const planStart = document.getElementById(`${prefix}-plan-start`).value;
+  const planEnd = document.getElementById(`${prefix}-plan-end`).value;
+  const realStart = document.getElementById(`${prefix}-real-start`).value;
+  const realEnd = document.getElementById(`${prefix}-real-end`).value;
+  if (planStart && planEnd) {
+    document.getElementById(`${prefix}-plan-days`).value = '計算中...';
+    document.getElementById(`${prefix}-plan-days`).value = await calcWorkDays(planStart, planEnd);
+  }
+  if (realStart && realEnd) {
+    document.getElementById(`${prefix}-real-days`).value = '計算中...';
+    document.getElementById(`${prefix}-real-days`).value = await calcWorkDays(realStart, realEnd);
+  }
+};
+
+// ── Project Template: auto-create blank trade rows ──
+const TEMPLATE_DESIGN = ['初步諮詢','丈量','平面配置','3D示意','軟裝規劃','建材挑選','立面圖/施工圖','廠商詢價','工程報價'];
+const TEMPLATE_WORK = ['假設工程','拆除工程','消防工程','水電工程','廚具設備','鋁窗工程','空調工程','泥作工程','木作工程','鐵件工程','玻璃工程','系統櫃工程','油漆工程','廣告工程','清潔工程','地板工程','家具軟裝工程','收尾','拍攝','點交'];
+
+async function createProjectTemplate(projId) {
+  const allTrades = [...TEMPLATE_DESIGN, ...TEMPLATE_WORK];
+  for (const name of allTrades) {
+    await addDoc(collection(db, `projects/${projId}/trades`), {
+      name, vendor:'', planIn:'', planOut:'', planDays:'',
+      realIn:'', realOut:'', realDays:'', note:'',
+      createdAt: serverTimestamp()
+    });
+  }
+}
+
+// ── Tab ──
+window.switchTab = (id, el) => {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+};
+
+// ── Modal ──
+window.openModal = id => document.getElementById('modal-' + id).classList.add('open');
+window.closeModal = id => document.getElementById('modal-' + id).classList.remove('open');
+document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target===b) b.classList.remove('open'); }));
+
+// ── Helpers ──
+const badge = (type, label) => `<span class="badge badge-${type}"><span class="badge-dot"></span>${label}</span>`;
+const statusBadge = s => {
+  const m = { '施工中':'yellow','收尾中':'green','完工':'green','規劃中':'gray','緊急':'red','一般':'yellow','輕微':'gray','已付款':'green','待付款':'yellow','逾期':'red','已到貨':'green','運送中':'yellow','製作中':'blue','待訂購':'red','草稿':'gray','業主審核中':'yellow','財務確認中':'yellow','逾期未付':'red','住宅':'blue','商業':'purple' };
+  return badge(m[s]||'gray', s);
+};
+const fmt = n => 'NT$' + (parseInt(n)||0).toLocaleString();
+const today = () => new Date().toLocaleDateString('zh-TW', { month:'2-digit', day:'2-digit' }).replace('/','/');
+let claimCounter = 1;
+
+// ── Dynamic Status Options ──
+const DESIGN_STATUSES = ['初步諮詢','丈量','平面配置','3D示意','軟裝規劃','建材挑選','立面圖/施工圖','廠商詢價','工程報價'];
+const DEFAULT_STATUSES = ['規劃中','施工中','收尾中','完工'];
+
+window.syncStatusOptions = (phaseId, statusId, currentVal) => {
+  const phase = document.getElementById(phaseId).value;
+  const statusEl = document.getElementById(statusId);
+  const opts = phase === '設計階段' ? DESIGN_STATUSES : DEFAULT_STATUSES;
+  statusEl.innerHTML = opts.map(o => `<option${currentVal===o?' selected':''}>${o}</option>`).join('');
+};
+
+// ── Real-time Listeners ──
+function initApp() {
+  listenProjects();
+  listenIssues();
+  listenVendors();
+  listenExpenses();
+  listenMaterials();
+  listenClaims();
+  listenEvents();
+  renderCal();
+}
+
+// PROJECTS
+function listenProjects() {
+  onSnapshot(collection(db,'projects'), snap => {
+    const rows = snap.docs;
+    rows.forEach(d => window._cache.projects[d.id] = d.data());
+    document.getElementById('s-projects').textContent = rows.length;
+    const container = document.getElementById('project-cards');
+    if (!rows.length) {
+      container.innerHTML = '<div class="empty" style="padding:40px;text-align:center;color:var(--text3)">尚無專案，點「新增專案」開始</div>';
+      return;
+    }
+    container.innerHTML = rows.map(d => {
+      const p = d.data();
+      const meta = window._projMeta[d.id] || {};
+
+      // Progress
+      let pct = 0;
+      const today = new Date().toISOString().slice(0,10);
+      const refStart = p.realStart || p.planStart;
+      const refEnd = p.realEnd || p.planEnd;
+      if (refStart && refEnd) {
+        if (today <= refStart) pct = 0;
+        else if (today >= refEnd) pct = 100;
+        else pct = Math.min(99, Math.round((new Date(today)-new Date(refStart))/(new Date(refEnd)-new Date(refStart))*100));
+      }
+      if (meta.autoPct !== null && meta.autoPct !== undefined) pct = meta.autoPct;
+      const color = pct>80?'var(--green)':pct>50?'var(--blue)':'var(--yellow)';
+
+      // Auto status
+      let autoStatus = '規劃中';
+      if (meta.currentPhase === '設計階段') autoStatus = '規劃中';
+      else if (meta.currentPhase === '工程階段') {
+        if (meta.currentTrade === '點交') autoStatus = '完工';
+        else if (meta.currentTrade === '收尾') autoStatus = '收尾中';
+        else autoStatus = '施工中';
+      }
+
+      const fmtDate = d => d ? d.slice(2).replace(/-/g,'/') : '—';
+
+      return `<div class="proj-card" id="proj-card-${d.id}">
+        <div class="proj-card-header" onclick="toggleTradePanel('${d.id}')">
+          <button class="proj-card-expand" id="expand-${d.id}" onclick="event.stopPropagation();toggleTradePanel('${d.id}')">▶</button>
+          <div class="proj-card-main">
+            <div class="proj-card-name">${p.name||''}</div>
+            <div class="proj-card-meta">
+              ${statusBadge(p.type||'住宅')}
+              <span style="color:var(--text3);font-size:12px">${p.area||'—'} 坪</span>
+              ${meta.currentPhase ? `<span style="font-size:11px;color:var(--text3)">｜</span><span style="font-size:11px;color:var(--text3)">${meta.currentPhase||''}</span><span style="font-size:13px;color:var(--accent);font-weight:600;margin-left:4px">${meta.currentTrade||''}</span>` : ''}
+            </div>
+          </div>
+          <div class="proj-card-schedule">
+            <div class="proj-card-schedule-row">
+              <div class="proj-card-schedule-label">📅 預計開工 → 完工</div>
+              <div class="proj-card-schedule-val" style="color:var(--text2)">${fmtDate(p.planStart)} → ${fmtDate(p.planEnd)}${p.planDays?` <span style="color:var(--text3);font-size:11px">(${p.planDays}天)</span>`:''}</div>
+            </div>
+            <div class="proj-card-schedule-row">
+              <div class="proj-card-schedule-label">✅ 實際開工 → 完工</div>
+              <div class="proj-card-schedule-val" style="color:var(--green)">${fmtDate(p.realStart)} → ${p.realEnd?fmtDate(p.realEnd):'進行中'}${p.realDays?` <span style="color:var(--text3);font-size:11px">(${p.realDays}天)</span>`:''}</div>
+            </div>
+          </div>
+          <div class="proj-card-progress">
+            <div class="proj-card-progress-top">
+              <span style="color:var(--text2)">進度</span>
+              <span style="font-family:monospace;font-weight:700;color:${color}">${pct}%</span>
+            </div>
+            <div class="progress-bar" style="height:6px">
+              <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+          </div>
+          <div id="status-cell-${d.id}">${statusBadge(autoStatus)}</div>
+          <div class="proj-card-actions" onclick="event.stopPropagation()">
+            <button class="btn btn-ghost btn-sm" onclick="openEditProject('${d.id}')">編輯</button>
+            <button class="btn-danger" onclick="confirmDelete('projects','${d.id}')">刪除</button>
+          </div>
+        </div>
+        <div id="trade-panel-${d.id}" style="display:none">
+          <div class="proj-card-body">
+            <div class="proj-card-trade-panel">
+              <div class="proj-card-trade-header">
+                <span class="proj-card-trade-title">🔨 工種時程 — ${p.name||''}</span>
+                <button class="btn btn-primary btn-sm" onclick="openAddTrade('${d.id}','${(p.name||'').replace(/'/g,"\\'")}')">＋ 新增工種</button>
+              </div>
+              <div id="trade-list-${d.id}"><div class="empty" style="padding:16px;text-align:center">尚無工種，點「新增工種」開始</div></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    rows.forEach(d => listenTrades(d.id, d.data().name||''));
+    updateEventProjSelects();
+  });
+}
+
+// ISSUES
+function listenIssues() {
+  onSnapshot(collection(db,'issues'), snap => {
+    const rows = snap.docs;
+    const open = rows.filter(d => d.data().done !== true).length;
+    document.getElementById('s-issues').textContent = open;
+    const tb = document.getElementById('issue-table');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">尚無問題紀錄</td></tr>'; return; }
+    tb.innerHTML = rows.map(d => {
+      const p = d.data();
+      return `<tr style="opacity:${p.done?0.4:1}">
+        <td>${p.desc||''}</td>
+        <td style="color:var(--text2)">${p.proj||''}</td>
+        <td>${statusBadge(p.level||'一般')}</td>
+        <td>${p.done ? badge('green','已解決') : badge('yellow','待處理')}</td>
+        <td style="display:flex;gap:6px">
+          ${!p.done ? `<button class="btn btn-ghost btn-sm" onclick="resolveIssue('${d.id}')">處理完畢</button>` : ''}
+          <button class="btn-danger" onclick="confirmDelete('issues','${d.id}')">刪除</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// VENDORS
+function listenVendors() {
+  onSnapshot(collection(db,'vendors'), snap => {
+    snap.docs.forEach(d => window._cache.vendors[d.id] = d.data());
+    document.getElementById('s-vendors').textContent = snap.docs.length;
+    const tb = document.getElementById('vendor-table');
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">尚無廠商資料</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map(d => {
+      const p = d.data();
+      return `<tr>
+        <td><strong>${p.name||''}</strong></td>
+        <td style="color:var(--blue);font-size:12px">${p.cat||''}</td>
+        <td>${p.contact||'—'}</td>
+        <td style="font-family:monospace">${p.phone||'—'}</td>
+        <td style="color:var(--text2);font-size:12px">${p.note||'—'}</td>
+        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditVendor('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('vendors','${d.id}')">刪除</button></td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// EXPENSES
+function listenExpenses() {
+  onSnapshot(collection(db,'expenses'), snap => {
+    snap.docs.forEach(d => window._cache.expenses[d.id] = d.data());
+    let total=0, paid=0, pending=0, overdue=0;
+    snap.docs.forEach(d => {
+      const p = d.data(); const a = parseInt(p.amount)||0;
+      total += a;
+      if (p.status==='已付款') paid+=a;
+      else if (p.status==='待付款') pending+=a;
+      else if (p.status==='逾期') overdue+=a;
+    });
+    document.getElementById('s-total-expense').textContent = fmt(total);
+    document.getElementById('s-paid').textContent = fmt(paid);
+    document.getElementById('s-pending').textContent = fmt(pending);
+    document.getElementById('s-overdue').textContent = fmt(overdue);
+    const tb = document.getElementById('expense-table');
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">尚無費用紀錄</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map(d => {
+      const p = d.data();
+      return `<tr>
+        <td>${p.name||''}</td>
+        <td style="color:var(--text2)">${p.proj||''}</td>
+        <td style="font-family:monospace;color:var(--red)">${fmt(p.amount)}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.date||'—'}</td>
+        <td>${statusBadge(p.status||'待付款')}</td>
+        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditExpense('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('expenses','${d.id}')">刪除</button></td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// MATERIALS
+function listenMaterials() {
+  onSnapshot(collection(db,'materials'), snap => {
+    snap.docs.forEach(d => window._cache.materials[d.id] = d.data());
+    document.getElementById('s-materials').textContent = snap.docs.length;
+    const tb = document.getElementById('material-table');
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">尚無材料紀錄</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map(d => {
+      const p = d.data();
+      const total = (parseInt(p.qty)||0)*(parseInt(p.price)||0);
+      return `<tr>
+        <td><strong>${p.name||''}</strong></td>
+        <td style="color:var(--text2);font-size:12px">${p.spec||'—'}</td>
+        <td style="font-family:monospace">${p.qty||0} ${p.unit||'件'}</td>
+        <td style="font-family:monospace">${fmt(p.price)}</td>
+        <td style="font-family:monospace;color:var(--yellow)">${fmt(total)}</td>
+        <td style="color:var(--text2)">${p.proj||'—'}</td>
+        <td>${statusBadge(p.status||'待訂購')}</td>
+        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditMaterial('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('materials','${d.id}')">刪除</button></td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// CLAIMS
+function listenClaims() {
+  onSnapshot(collection(db,'claims'), snap => {
+    snap.docs.forEach(d => window._cache.claims[d.id] = d.data());
+    const tb = document.getElementById('claim-table');
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">尚無請款單</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map((d,i) => {
+      const p = d.data();
+      return `<tr>
+        <td style="font-family:monospace;font-size:12px">CL-${String(i+1).padStart(3,'0')}</td>
+        <td>${p.proj||''}</td>
+        <td style="color:var(--text2)">${p.vendor||''}</td>
+        <td style="font-family:monospace;color:var(--yellow)">${fmt(p.amount)}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.applyDate||'—'}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.payDate||'—'}</td>
+        <td>${statusBadge(p.status||'草稿')}</td>
+        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditClaim('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('claims','${d.id}')">刪除</button></td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// ── Save Functions ──
+window.saveProject = async () => {
+  const name = document.getElementById('p-name').value; if (!name) return;
+  const planStart = document.getElementById('p-plan-start').value;
+  const planEnd = document.getElementById('p-plan-end').value;
+  const realStart = document.getElementById('p-real-start').value;
+  const realEnd = document.getElementById('p-real-end').value;
+  const ref = await addDoc(collection(db,'projects'), {
+    name,
+    type: document.getElementById('p-type').value,
+    area: document.getElementById('p-area').value,
+    status: '規劃中',
+    planStart, planEnd,
+    planDays: document.getElementById('p-plan-days').value||'',
+    realStart, realEnd,
+    realDays: document.getElementById('p-real-days').value||'',
+    createdAt: serverTimestamp()
+  });
+  closeModal('addProject');
+  ['p-name','p-area','p-plan-start','p-plan-end','p-plan-days','p-real-start','p-real-end','p-real-days'].forEach(id=>document.getElementById(id).value='');
+  // Create template and auto-expand
+  await createProjectTemplate(ref.id);
+  setTimeout(() => {
+    const panel = document.getElementById(`trade-panel-${ref.id}`);
+    const btn = document.getElementById(`expand-${ref.id}`);
+    if (panel) { panel.style.display='block'; if(btn) btn.textContent='▼'; }
+  }, 1000);
+};
+
+window.saveIssue = async () => {
+  const desc = document.getElementById('i-desc').value; if (!desc) return;
+  await addDoc(collection(db,'issues'), { desc, proj:document.getElementById('i-proj').value, level:document.getElementById('i-level').value, done:false, createdAt:serverTimestamp() });
+  closeModal('addIssue'); document.getElementById('i-desc').value=''; document.getElementById('i-proj').value='';
+};
+
+window.saveVendor = async () => {
+  const name = document.getElementById('v-name').value; if (!name) return;
+  await addDoc(collection(db,'vendors'), { name, cat:document.getElementById('v-cat').value, contact:document.getElementById('v-contact').value, phone:document.getElementById('v-phone').value, note:document.getElementById('v-note').value, createdAt:serverTimestamp() });
+  closeModal('addVendor'); ['v-name','v-cat','v-contact','v-phone','v-note'].forEach(id=>document.getElementById(id).value='');
+};
+
+window.saveExpense = async () => {
+  const name = document.getElementById('e-name').value; if (!name) return;
+  await addDoc(collection(db,'expenses'), { name, proj:document.getElementById('e-proj').value, amount:document.getElementById('e-amount').value, date:document.getElementById('e-date').value, status:document.getElementById('e-status').value, createdAt:serverTimestamp() });
+  closeModal('addExpense'); ['e-name','e-proj','e-amount','e-date'].forEach(id=>document.getElementById(id).value='');
+};
+
+window.saveMaterial = async () => {
+  const name = document.getElementById('m-name').value; if (!name) return;
+  await addDoc(collection(db,'materials'), { name, spec:document.getElementById('m-spec').value, qty:document.getElementById('m-qty').value, unit:document.getElementById('m-unit').value||'件', price:document.getElementById('m-price').value, proj:document.getElementById('m-proj').value, status:document.getElementById('m-status').value, createdAt:serverTimestamp() });
+  closeModal('addMaterial'); ['m-name','m-spec','m-qty','m-unit','m-price','m-proj'].forEach(id=>document.getElementById(id).value='');
+};
+
+window.saveClaim = async () => {
+  const amount = document.getElementById('c-amount').value; if (!amount) return;
+  await addDoc(collection(db,'claims'), { proj:document.getElementById('c-proj').value, vendor:document.getElementById('c-vendor').value, amount, payDate:document.getElementById('c-paydate').value, status:document.getElementById('c-status').value, applyDate:today(), createdAt:serverTimestamp() });
+  closeModal('addClaim'); ['c-proj','c-vendor','c-amount','c-paydate'].forEach(id=>document.getElementById(id).value='');
+};
+
+window.resolveIssue = async id => { await updateDoc(doc(db,'issues',id), { done:true }); };
+
+// ── Edit Open Functions ──
+window.openEditProject = (id) => {
+  const p = window._cache.projects[id]; if(!p) return;
+  document.getElementById('ep-id').value = id;
+  document.getElementById('ep-name').value = p.name||'';
+  document.getElementById('ep-area').value = p.area||'';
+  const typeEl = document.getElementById('ep-type');
+  [...typeEl.options].forEach(o => o.selected = o.value === p.type);
+  document.getElementById('ep-plan-start').value = p.planStart||'';
+  document.getElementById('ep-plan-end').value = p.planEnd||'';
+  document.getElementById('ep-plan-days').value = p.planDays||'';
+  document.getElementById('ep-real-start').value = p.realStart||'';
+  document.getElementById('ep-real-end').value = p.realEnd||'';
+  document.getElementById('ep-real-days').value = p.realDays||'';
+  openModal('editProject');
+};
+
+window.openEditVendor = (id) => {
+  const p = window._cache.vendors[id]; if(!p) return;
+  document.getElementById('ev-id').value = id;
+  document.getElementById('ev-name').value = p.name||'';
+  document.getElementById('ev-cat').value = p.cat||'';
+  document.getElementById('ev-contact').value = p.contact||'';
+  document.getElementById('ev-phone').value = p.phone||'';
+  document.getElementById('ev-note').value = p.note||'';
+  openModal('editVendor');
+};
+
+window.openEditExpense = (id) => {
+  const p = window._cache.expenses[id]; if(!p) return;
+  document.getElementById('ee-id').value = id;
+  document.getElementById('ee-name').value = p.name||'';
+  document.getElementById('ee-proj').value = p.proj||'';
+  document.getElementById('ee-amount').value = p.amount||'';
+  document.getElementById('ee-date').value = p.date||'';
+  [...document.getElementById('ee-status').options].forEach(o => o.selected = o.value === p.status);
+  openModal('editExpense');
+};
+
+window.openEditMaterial = (id) => {
+  const p = window._cache.materials[id]; if(!p) return;
+  document.getElementById('em-id').value = id;
+  document.getElementById('em-name').value = p.name||'';
+  document.getElementById('em-spec').value = p.spec||'';
+  document.getElementById('em-qty').value = p.qty||'';
+  document.getElementById('em-unit').value = p.unit||'';
+  document.getElementById('em-price').value = p.price||'';
+  document.getElementById('em-proj').value = p.proj||'';
+  [...document.getElementById('em-status').options].forEach(o => o.selected = o.value === p.status);
+  openModal('editMaterial');
+};
+
+window.openEditClaim = (id) => {
+  const p = window._cache.claims[id]; if(!p) return;
+  document.getElementById('ec-id').value = id;
+  document.getElementById('ec-proj').value = p.proj||'';
+  document.getElementById('ec-vendor').value = p.vendor||'';
+  document.getElementById('ec-amount').value = p.amount||'';
+  document.getElementById('ec-paydate').value = p.payDate||'';
+  [...document.getElementById('ec-status').options].forEach(o => o.selected = o.value === p.status);
+  openModal('editClaim');
+};
+
+// ── Update Functions ──
+window.updateProject = async () => {
+  const id = document.getElementById('ep-id').value;
+  const planStart = document.getElementById('ep-plan-start').value;
+  const planEnd = document.getElementById('ep-plan-end').value;
+  const realStart = document.getElementById('ep-real-start').value;
+  const realEnd = document.getElementById('ep-real-end').value;
+  await updateDoc(doc(db,'projects',id), {
+    name: document.getElementById('ep-name').value,
+    type: document.getElementById('ep-type').value,
+    area: document.getElementById('ep-area').value,
+    status: document.getElementById('ep-status').value,
+    planStart, planEnd,
+    planDays: document.getElementById('ep-plan-days').value||'',
+    realStart, realEnd,
+    realDays: document.getElementById('ep-real-days').value||'',
+  });
+  closeModal('editProject');
+};
+
+window.updateVendor = async () => {
+  const id = document.getElementById('ev-id').value;
+  await updateDoc(doc(db,'vendors',id), { name:document.getElementById('ev-name').value, cat:document.getElementById('ev-cat').value, contact:document.getElementById('ev-contact').value, phone:document.getElementById('ev-phone').value, note:document.getElementById('ev-note').value });
+  closeModal('editVendor');
+};
+
+window.updateExpense = async () => {
+  const id = document.getElementById('ee-id').value;
+  await updateDoc(doc(db,'expenses',id), { name:document.getElementById('ee-name').value, proj:document.getElementById('ee-proj').value, amount:document.getElementById('ee-amount').value, date:document.getElementById('ee-date').value, status:document.getElementById('ee-status').value });
+  closeModal('editExpense');
+};
+
+window.updateMaterial = async () => {
+  const id = document.getElementById('em-id').value;
+  await updateDoc(doc(db,'materials',id), { name:document.getElementById('em-name').value, spec:document.getElementById('em-spec').value, qty:document.getElementById('em-qty').value, unit:document.getElementById('em-unit').value, price:document.getElementById('em-price').value, proj:document.getElementById('em-proj').value, status:document.getElementById('em-status').value });
+  closeModal('editMaterial');
+};
+
+window.updateClaim = async () => {
+  const id = document.getElementById('ec-id').value;
+  await updateDoc(doc(db,'claims',id), { proj:document.getElementById('ec-proj').value, vendor:document.getElementById('ec-vendor').value, amount:document.getElementById('ec-amount').value, payDate:document.getElementById('ec-paydate').value, status:document.getElementById('ec-status').value });
+  closeModal('editClaim');
+};
+
+// Make deleteDoc available to inline onclick
+window.deleteDoc = deleteDoc;
+window.doc = (ignore, col, id) => doc(db, col, id);
+
+// ── Excel Export ──
+window.exportExcel = async () => {
+  const cols = ['projects','issues','vendors','expenses','materials','claims'];
+  const allData = {};
+  for (const col of cols) {
+    const snap = await getDocs(collection(db, col));
+    allData[col] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  }
+
+  // Build CSV for each sheet
+  const csvParts = [];
+  const sheetNames = { projects:'工程專案', issues:'待處理問題', vendors:'廠商管理', expenses:'費用明細', materials:'材料清單', claims:'請款流程' };
+
+  for (const [key, rows] of Object.entries(allData)) {
+    if (!rows.length) continue;
+    const headers = Object.keys(rows[0]).filter(k => k !== 'createdAt');
+    const csv = [
+      `=== ${sheetNames[key]} ===`,
+      headers.join('\t'),
+      ...rows.map(r => headers.map(h => r[h]||'').join('\t'))
+    ].join('\n');
+    csvParts.push(csv);
+  }
+
+  const blob = new Blob(['\ufeff' + csvParts.join('\n\n')], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `WEIWU工程管理_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+};
+
+// ── Calendar Event Modal Logic ──
+window.setEventType = (type) => {
+  document.getElementById('ev2-type').value = type;
+  const isEvent = type === 'event';
+  document.getElementById('ev2-event-fields').style.display = isEvent ? '' : 'none';
+  document.getElementById('ev2-meeting-fields').style.display = isEvent ? 'none' : '';
+  document.getElementById('ev2-name-label').textContent = isEvent ? '事件名稱' : '會議名稱';
+  document.getElementById('ev-type-btn-event').style.background = isEvent ? 'var(--accent)' : 'none';
+  document.getElementById('ev-type-btn-event').style.color = isEvent ? '#0e0f13' : 'var(--text2)';
+  document.getElementById('ev-type-btn-meeting').style.background = isEvent ? 'none' : 'var(--accent)';
+  document.getElementById('ev-type-btn-meeting').style.color = isEvent ? 'var(--text2)' : '#0e0f13';
+};
+
+window.setEditEventType = (type) => {
+  document.getElementById('ee2-type').value = type;
+  const isEvent = type === 'event';
+  document.getElementById('ee2-event-fields').style.display = isEvent ? '' : 'none';
+  document.getElementById('ee2-meeting-fields').style.display = isEvent ? 'none' : '';
+  document.getElementById('ee2-name-label').textContent = isEvent ? '事件名稱' : '會議名稱';
+  document.getElementById('ee-type-btn-event').style.background = isEvent ? 'var(--accent)' : 'none';
+  document.getElementById('ee-type-btn-event').style.color = isEvent ? '#0e0f13' : 'var(--text2)';
+  document.getElementById('ee-type-btn-meeting').style.background = isEvent ? 'none' : 'var(--accent)';
+  document.getElementById('ee-type-btn-meeting').style.color = isEvent ? 'var(--text2)' : '#0e0f13';
+};
+
+// Update project selects with current projects
+function updateEventProjSelects() {
+  const projects = Object.values(window._cache.projects).map(p => p.name).filter(Boolean);
+  ['ev2','ee2'].forEach(prefix => {
+    const sel = document.getElementById(`${prefix}-proj-select`);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— 選擇專案 —</option>' +
+      projects.map(n => `<option value="${n}"${cur===n?' selected':''}>${n}</option>`).join('') +
+      '<option value="__custom__">✏️ 自行填入</option>';
+  });
+}
+
+window.handleEventProjSelect = (prefix) => {
+  const val = document.getElementById(`${prefix}-proj-select`).value;
+  const customRow = document.getElementById(`${prefix}-proj-custom-row`);
+  const hiddenRow = document.getElementById(`${prefix}-proj-hidden-row`);
+  if (val === '__custom__') {
+    customRow.style.display = '';
+    hiddenRow.style.display = 'none';
+  } else {
+    customRow.style.display = 'none';
+    hiddenRow.style.display = '';
+  }
+};
+
+function getEventProj(prefix) {
+  const val = document.getElementById(`${prefix}-proj-select`).value;
+  if (val === '__custom__') return document.getElementById(`${prefix}-proj-custom`).value;
+  return val;
+}
+
+// ── Calendar ──
+let calView = 'month';
+let calDate = new Date();
+let calEvents = [];
+let calProjects = [];
+
+function setCalView(v) {
+  calView = v;
+  document.getElementById('vbtn-month').classList.toggle('active', v==='month');
+  document.getElementById('vbtn-week').classList.toggle('active', v==='week');
+  renderCal();
+}
+
+window.setCalView = setCalView;
+window.calNav = (dir) => {
+  if (calView==='month') calDate = new Date(calDate.getFullYear(), calDate.getMonth()+dir, 1);
+  else { calDate = new Date(calDate); calDate.setDate(calDate.getDate() + dir*7); }
+  renderCal();
+};
+window.calToday = () => { calDate = new Date(); renderCal(); };
+
+function listenEvents() {
+  onSnapshot(collection(db,'events'), snap => {
+    calEvents = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    // Update project filter
+    const projs = [...new Set(calEvents.map(e=>e.proj).filter(Boolean))];
+    calProjects = projs;
+    const filter = document.getElementById('cal-filter');
+    const cur = filter.value;
+    filter.innerHTML = '<option value="">全部專案</option>' + projs.map(p=>`<option${cur===p?' selected':''}>${p}</option>`).join('');
+    renderCal();
+  });
+}
+
+function renderCal() {
+  const filter = document.getElementById('cal-filter').value;
+  const events = filter ? calEvents.filter(e=>e.proj===filter) : calEvents;
+  // Project color map
+  const projList = [...new Set(calEvents.map(e=>e.proj).filter(Boolean))];
+  const projColor = p => `ec-${projList.indexOf(p)%6}`;
+
+  if (calView==='month') renderMonth(events, projColor);
+  else renderWeek(events, projColor);
+}
+
+window.renderCal = renderCal;
+
+function renderMonth(events, projColor) {
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById('cal-title').textContent = `${y}年${m+1}月`;
+
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const daysInPrev = new Date(y, m, 0).getDate();
+
+  const weekdays = ['日','一','二','三','四','五','六'];
+  let html = `<div class="cal-grid">`;
+  weekdays.forEach(d => html += `<div class="cal-weekday">${d}</div>`);
+
+  // days
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  for (let i=0; i<totalCells; i++) {
+    let day, curY=y, curM=m, otherMonth=false;
+    if (i < firstDay) { day = daysInPrev - firstDay + i + 1; curM=m-1; if(curM<0){curM=11;curY--;} otherMonth=true; }
+    else if (i >= firstDay+daysInMonth) { day = i-firstDay-daysInMonth+1; curM=m+1; if(curM>11){curM=0;curY++;} otherMonth=true; }
+    else { day = i - firstDay + 1; }
+
+    const dateStr = `${curY}-${String(curM+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const d = new Date(curY, curM, day); d.setHours(0,0,0,0);
+    const isToday = d.getTime()===today.getTime();
+    const dayEvents = events.filter(e=>e.date===dateStr);
+
+    html += `<div class="cal-day${otherMonth?' other-month':''}${isToday?' today':''}">
+      <div class="cal-day-num">${day}</div>
+      ${dayEvents.map(e=>`<div class="cal-event ${projColor(e.proj)}" onclick="openEditEventModal('${e.id}')" title="${e.name} | ${e.proj||''}">${e.type==='meeting'?'🤝 ':''}${e.timeStart?e.timeStart+' ':''}<strong>${e.name}</strong></div>`).join('')}
+      <button class="cal-add-btn" onclick="openAddEventOnDate('${dateStr}')">+</button>
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('cal-container').innerHTML = html;
+}
+
+function renderWeek(events, projColor) {
+  const d = new Date(calDate);
+  const day = d.getDay();
+  const weekStart = new Date(d); weekStart.setDate(d.getDate()-day);
+  const weekDays = Array.from({length:7}, (_,i) => { const x=new Date(weekStart); x.setDate(weekStart.getDate()+i); return x; });
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const startStr = `${weekStart.getMonth()+1}/${weekStart.getDate()}`;
+  const end = new Date(weekStart); end.setDate(weekStart.getDate()+6);
+  const endStr = `${end.getMonth()+1}/${end.getDate()}`;
+  document.getElementById('cal-title').textContent = `${weekStart.getFullYear()}年 ${startStr}－${endStr}`;
+
+  const weekdayNames = ['週日','週一','週二','週三','週四','週五','週六'];
+  let html = `<div class="week-grid">`;
+  html += `<div class="week-header" style="border-right:1px solid var(--border)"></div>`;
+  weekDays.forEach((wd,i) => {
+    const isToday = wd.getTime()===today.getTime();
+    html += `<div class="week-header${isToday?' today-col':''}" style="${i===6?'border-right:none':''}">${weekdayNames[i]}<br><span style="font-size:13px;font-weight:700">${wd.getDate()}</span></div>`;
+  });
+
+  // All-day events row
+  html += `<div class="week-time" style="font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:center">全日</div>`;
+  weekDays.forEach((wd, i) => {
+    const dateStr = `${wd.getFullYear()}-${String(wd.getMonth()+1).padStart(2,'0')}-${String(wd.getDate()).padStart(2,'0')}`;
+    const dayEvents = events.filter(e=>e.date===dateStr);
+    html += `<div class="week-cell" style="${i===6?'border-right:none':''}">
+      ${dayEvents.map(e=>`<div class="week-event ${projColor(e.proj)}" onclick="openEditEventModal('${e.id}')" title="${e.name}">${e.type==='meeting'?'🤝 ':''}${e.timeStart?e.timeStart+' ':''}${e.name}</div>`).join('')}
+    </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('cal-container').innerHTML = html;
+}
+
+window.openAddEventOnDate = (dateStr) => {
+  updateEventProjSelects();
+  setEventType('event');
+  document.getElementById('ev2-date').value = dateStr;
+  document.getElementById('ev2-time-start').value = '09:00';
+  document.getElementById('ev2-time-end').value = '10:00';
+  openModal('addEvent');
+};
+
+window.openEditEventModal = (id) => {
+  const e = calEvents.find(ev=>ev.id===id); if(!e) return;
+  updateEventProjSelects();
+  document.getElementById('ee2-id').value = id;
+  document.getElementById('ee2-name').value = e.name||'';
+  document.getElementById('ee2-date').value = e.date||'';
+  document.getElementById('ee2-time-start').value = e.timeStart||'';
+  document.getElementById('ee2-time-end').value = e.timeEnd||'';
+  document.getElementById('ee2-note').value = e.note||'';
+  document.getElementById('ee2-trade').value = e.trade||'';
+  document.getElementById('ee2-attendees') && (document.getElementById('ee2-attendees').value = e.attendees||'');
+  document.getElementById('ee2-location') && (document.getElementById('ee2-location').value = e.location||'');
+  // Set project
+  const sel = document.getElementById('ee2-proj-select');
+  const projExists = [...sel.options].some(o => o.value === e.proj);
+  if (projExists) { sel.value = e.proj; handleEventProjSelect('ee2'); }
+  else if (e.proj) { sel.value = '__custom__'; handleEventProjSelect('ee2'); document.getElementById('ee2-proj-custom').value = e.proj; }
+  [...document.getElementById('ee2-progress').options].forEach(o=>o.selected=o.value===e.progress);
+  [...document.getElementById('ee2-payment').options].forEach(o=>o.selected=o.value===e.payment);
+  const type = e.type||'event';
+  setEditEventType(type);
+  openModal('editEvent');
+};
+
+window.saveEvent = async () => {
+  const name = document.getElementById('ev2-name').value; if(!name) return;
+  const type = document.getElementById('ev2-type').value;
+  await addDoc(collection(db,'events'), {
+    name, type,
+    date: document.getElementById('ev2-date').value,
+    timeStart: document.getElementById('ev2-time-start').value,
+    timeEnd: document.getElementById('ev2-time-end').value,
+    proj: getEventProj('ev2'),
+    progress: document.getElementById('ev2-progress').value,
+    trade: type==='event' ? document.getElementById('ev2-trade').value : '',
+    payment: type==='event' ? document.getElementById('ev2-payment').value : '',
+    attendees: type==='meeting' ? document.getElementById('ev2-attendees').value : '',
+    location: type==='meeting' ? document.getElementById('ev2-location').value : '',
+    note: document.getElementById('ev2-note').value,
+    syncedProjId: '', createdAt: serverTimestamp()
+  });
+  closeModal('addEvent');
+  ['ev2-name','ev2-date','ev2-time-start','ev2-time-end','ev2-proj-custom','ev2-trade','ev2-attendees','ev2-location','ev2-note'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+};
+
+window.updateEvent = async () => {
+  const id = document.getElementById('ee2-id').value;
+  const type = document.getElementById('ee2-type').value;
+  await updateDoc(doc(db,'events',id), {
+    name: document.getElementById('ee2-name').value,
+    type,
+    date: document.getElementById('ee2-date').value,
+    timeStart: document.getElementById('ee2-time-start').value,
+    timeEnd: document.getElementById('ee2-time-end').value,
+    proj: getEventProj('ee2'),
+    progress: document.getElementById('ee2-progress').value,
+    trade: type==='event' ? document.getElementById('ee2-trade').value : '',
+    payment: type==='event' ? document.getElementById('ee2-payment').value : '',
+    attendees: type==='meeting' ? document.getElementById('ee2-attendees').value : '',
+    location: type==='meeting' ? document.getElementById('ee2-location').value : '',
+    note: document.getElementById('ee2-note').value,
+  });
+  closeModal('editEvent');
+};
+
+window.deleteEventById = async () => {
+  const id = document.getElementById('ee2-id').value;
+  if(confirm('確定要刪除此事件？')) { await deleteDoc(doc(db,'events',id)); closeModal('editEvent'); }
+};
+
+// ── Trade Phase/Name Sync ──
+const DESIGN_TRADE_OPTS = ['初步諮詢','丈量','平面配置','3D示意','軟裝規劃','建材挑選','立面圖/施工圖','廠商詢價','工程報價'];
+window.DESIGN_TRADE_OPTS = DESIGN_TRADE_OPTS;
+const WORK_TRADE_OPTS = ['假設工程','拆除工程','消防工程','水電工程','廚具設備','鋁窗工程','空調工程','泥作工程','木作工程','鐵件工程','玻璃工程','系統櫃工程','油漆工程','廣告工程','清潔工程','地板工程','家具軟裝工程','收尾','拍攝','點交'];
+
+window.syncTradeNameOpts = (phaseId, nameId, currentVal) => {
+  const phase = document.getElementById(phaseId).value;
+  const opts = phase === '設計階段' ? DESIGN_TRADE_OPTS : WORK_TRADE_OPTS;
+  const nameEl = document.getElementById(nameId);
+  nameEl.innerHTML = opts.map(o => `<option${currentVal===o?' selected':''}>${o}</option>`).join('');
+};
+
+// ── Trade Schedule ──
+window._tradeUnsub = {};
+
+window.toggleTradePanel = (projId) => {
+  const panel = document.getElementById(`trade-panel-${projId}`);
+  const btn = document.getElementById(`expand-${projId}`);
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '▶' : '▼';
+};
+
+window.openAddTrade = (projId, projName) => {
+  document.getElementById('t-projId').value = projId;
+  document.getElementById('t-projName').value = projName;
+  ['t-plan-in','t-plan-out','t-real-in','t-real-out','t-note'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('t-plan-days').value='';
+  document.getElementById('t-real-days').value='';
+  document.getElementById('t-phase').value='設計階段';
+  syncTradeNameOpts('t-phase','t-name');
+  openModal('addTrade');
+};
+
+// ── 台灣工作天數計算（內建國定假日，扣除週末）──
+// 資料來源：中華民國行政機關辦公日曆（含補假）
+const TW_HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-01-27','2025-01-28','2025-01-29','2025-01-30','2025-01-31',
+  '2025-02-03','2025-02-04','2025-02-28','2025-04-03','2025-04-04','2025-04-05',
+  '2025-05-01','2025-05-30','2025-06-07','2025-09-11','2025-10-06','2025-10-09','2025-10-10',
+  // 2026
+  '2026-01-01','2026-01-15','2026-01-16','2026-02-13','2026-02-16','2026-02-17',
+  '2026-02-18','2026-02-19','2026-02-20','2026-02-28','2026-04-02','2026-04-03',
+  '2026-04-04','2026-05-01','2026-05-11','2026-05-29','2026-06-19','2026-09-16',
+  '2026-09-17','2026-10-01','2026-10-02','2026-10-09','2026-10-10',
+  // 2027
+  '2027-01-01','2027-01-26','2027-01-27','2027-01-28','2027-01-29',
+  '2027-02-02','2027-02-03','2027-02-04','2027-02-28','2027-03-30','2027-04-01',
+  '2027-04-03','2027-04-05','2027-05-01','2027-06-08','2027-09-23','2027-10-10'
+]);
+
+async function calcWorkDays(startStr, endStr) {
+  if (!startStr || !endStr) return '';
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T00:00:00');
+  if (end < start) return '';
+  let count = 0;
+  const cur = new Date(start);
+  while (cur <= end) {
+    const dow = cur.getDay();
+    const dateStr = cur.toISOString().slice(0,10);
+    if (dow !== 0 && dow !== 6 && !TW_HOLIDAYS.has(dateStr)) count++;
+    cur.setDate(cur.getDate()+1);
+  }
+  return count;
+}
+
+window.calcDays = async (type) => {
+  const inVal = document.getElementById(`t-${type}-in`).value;
+  const outVal = document.getElementById(`t-${type}-out`).value;
+  const el = document.getElementById(`t-${type}-days`);
+  el.value = '計算中...';
+  const d = await calcWorkDays(inVal, outVal);
+  el.value = d;
+};
+
+window.calcDaysEdit = async (type) => {
+  const inVal = document.getElementById(`et-${type}-in`).value;
+  const outVal = document.getElementById(`et-${type}-out`).value;
+  const el = document.getElementById(`et-${type}-days`);
+  el.value = '計算中...';
+  const d = await calcWorkDays(inVal, outVal);
+  el.value = d;
+};
+
+const diffDays = async (a, b) => calcWorkDays(a, b);
+
+function listenTrades(projId, projName) {
+  if (window._tradeUnsub[projId]) window._tradeUnsub[projId]();
+  window._tradeUnsub[projId] = onSnapshot(collection(db, `projects/${projId}/trades`), snap => {
+    const container = document.getElementById(`trade-list-${projId}`);
+
+    // ── Compute project-level meta from trades ──
+    const trades = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    const today = new Date().toISOString().slice(0,10);
+
+    // Determine currentPhase from today's active trade
+    let currentPhase = '—';
+    let currentTradeName = '—';
+    for (const t of trades) {
+      const inD = t.realIn || t.planIn;
+      const outD = t.realOut || t.planOut;
+      if (inD && outD && today >= inD && today <= outD) {
+        currentTradeName = t.name;
+        currentPhase = DESIGN_TRADE_OPTS.includes(t.name) ? '設計階段' : '工程階段';
+        break;
+      }
+    }
+    // fallback: last trade with realIn in past
+    if (currentTradeName === '—' && trades.length) {
+      const past = trades.filter(t => (t.realIn||t.planIn||'') <= today).sort((a,b) => ((b.realIn||b.planIn||'') > (a.realIn||a.planIn||'')) ? 1 : -1);
+      if (past.length) {
+        currentTradeName = past[0].name;
+        currentPhase = DESIGN_TRADE_OPTS.includes(past[0].name) ? '設計階段' : '工程階段';
+      }
+    }
+
+    // Date ranges
+    const planStarts = trades.map(t=>t.planIn).filter(Boolean).sort();
+    const planEnds = trades.map(t=>t.planOut).filter(Boolean).sort();
+    const realStarts = trades.map(t=>t.realIn).filter(Boolean).sort();
+    const realEnds = trades.map(t=>t.realOut).filter(Boolean).sort();
+
+    // Total days: sum of each trade's days
+    const planDaysTotal = trades.reduce((s,t)=>s+(parseInt(t.planDays)||0),0);
+    const realDaysTotal = trades.reduce((s,t)=>s+(parseInt(t.realDays)||0),0);
+
+    // Auto progress: completed trades (have realOut in past) / total
+    const completed = trades.filter(t => t.realOut && t.realOut <= today).length;
+    const autoPct = trades.length ? Math.round(completed/trades.length*100) : null;
+
+    window._projMeta[projId] = {
+      currentPhase,
+      currentTrade: currentTradeName,
+      planStart: planStarts[0]||'', planEnd: planEnds[planEnds.length-1]||'',
+      realStart: realStarts[0]||'', realEnd: realEnds[realEnds.length-1]||'',
+      planDaysTotal: planDaysTotal||'', realDaysTotal: realDaysTotal||'',
+      autoPct: autoPct !== null ? autoPct : null,
+      tradeNames: trades.map(t=>t.name).filter(Boolean)
+    };
+
+    // Re-render project row if visible
+    const rowEl = document.getElementById(`proj-row-${projId}`);
+    if (rowEl) {
+      const p = window._cache.projects[projId] || {};
+      const pct = autoPct !== null ? autoPct : (parseInt(p.pct)||0);
+      const color = pct>80?'var(--green)':pct>50?'var(--blue)':'var(--yellow)';
+      const meta = window._projMeta[projId];
+      rowEl.querySelector('td:nth-child(5)').innerHTML = `<div style="font-size:11px;color:var(--text3);margin-bottom:2px">${currentPhase}</div><div style="font-size:12px;color:var(--accent);font-weight:500">${currentTradeName}</div>`;
+      // Update status cell
+      const statusCell = document.getElementById(`status-cell-${projId}`);
+      if (statusCell) {
+        let autoStatus = p.status||'規劃中';
+        if (currentPhase === '設計階段') autoStatus = '規劃中';
+        else if (currentPhase === '工程階段') {
+          if (currentTradeName === '點交') autoStatus = '完工';
+          else if (currentTradeName === '收尾') autoStatus = '收尾中';
+          else autoStatus = '施工中';
+        }
+        statusCell.innerHTML = statusBadge(autoStatus);
+      }
+      rowEl.querySelector('td:nth-child(12)').innerHTML = `<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${color}"></div></div><div class="progress-label">${pct}%</div></div>`;
+    }
+
+    // ── Update calendar event progress selects dynamically ──
+    updateCalProgressOptions();
+
+    if (!container) return;
+    if (!snap.docs.length) { container.innerHTML = '<div class="empty" style="padding:16px">尚無工種，點「新增工種」開始</div>'; return; }
+
+    // Also sync to calendar events collection
+    syncTradesToCalendar(projId, projName, snap.docs);
+
+    // Sort trades by predefined order
+    const ALL_TRADE_ORDER = ['初步諮詢','丈量','平面配置','3D示意','軟裝規劃','建材挑選','立面圖/施工圖','廠商詢價','工程報價','假設工程','拆除工程','消防工程','水電工程','廚具設備','鋁窗工程','空調工程','泥作工程','木作工程','鐵件工程','玻璃工程','系統櫃工程','油漆工程','廣告工程','清潔工程','地板工程','家具軟裝工程','收尾','拍攝','點交'];
+    const sortedTrades = [...trades].sort((a, b) => {
+      // Use custom sortOrder if set, otherwise use predefined order
+      if (a.sortOrder !== undefined && b.sortOrder !== undefined) return a.sortOrder - b.sortOrder;
+      if (a.sortOrder !== undefined) return -1;
+      if (b.sortOrder !== undefined) return 1;
+      const ai = ALL_TRADE_ORDER.indexOf(a.name);
+      const bi = ALL_TRADE_ORDER.indexOf(b.name);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+    const sortedDocs = sortedTrades.map(t => snap.docs.find(d => d.id === t.id)).filter(Boolean);
+    const isDesignPhase = sortedTrades.length > 0 && sortedTrades.every(t => DESIGN_TRADE_OPTS.includes(t.name));
+    const inLabel = isDesignPhase ? '開始' : '進場';
+    const outLabel = isDesignPhase ? '完成' : '退場';
+
+    container.innerHTML = `<table class="trade-table" id="trade-tbl-${projId}">
+      <thead><tr>
+        <th style="width:28px"></th>
+        <th>工種／狀態</th><th>廠商</th>
+        <th>預計${inLabel}</th><th>預計${outLabel}</th><th>預計天數</th>
+        <th>實際${inLabel}</th><th>實際${outLabel}</th><th>實際天數</th>
+        <th>備註</th><th>操作</th>
+      </tr></thead>
+      <tbody id="trade-tbody-${projId}">
+      ${sortedDocs.map(d => {
+        const t = d.data();
+        const planD = parseInt(t.planDays)||0;
+        const realD = parseInt(t.realDays)||0;
+        const dayClass = realD && planD ? (realD > planD ? 'days-over' : 'days-ok') : '';
+        const isEmpty = !t.planIn && !t.planOut;
+        return `<tr draggable="true" data-id="${d.id}" data-proj="${projId}"
+          style="${isEmpty?'opacity:0.45':''}"
+          ondragstart="tradeDragStart(event)"
+          ondragover="tradeDragOver(event)"
+          ondrop="tradeDrop(event,'${projId}')"
+          ondragend="tradeDragEnd(event)">
+          <td style="color:var(--text3);text-align:center;cursor:grab;font-size:16px;user-select:none">⠿</td>
+          <td><strong style="font-size:12px">${t.name||''}</strong></td>
+          <td style="color:var(--text2);font-size:12px">${t.vendor||'—'}</td>
+          <td style="font-family:monospace;font-size:11px">${t.planIn||'<span style="color:var(--text3)">待填</span>'}</td>
+          <td style="font-family:monospace;font-size:11px">${t.planOut||'<span style="color:var(--text3)">待填</span>'}</td>
+          <td>${planD ? `<span class="days-badge">${planD} 天</span>` : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+          <td style="font-family:monospace;font-size:11px">${t.realIn||'—'}</td>
+          <td style="font-family:monospace;font-size:11px">${t.realOut||'—'}</td>
+          <td>${realD ? `<span class="days-badge ${dayClass}">${realD} 天</span>` : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+          <td style="color:var(--text2);font-size:11px">${t.note||'—'}</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openEditTrade('${projId}','${d.id}')">編輯</button></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+    // cache trades
+    if (!window._cache.trades) window._cache.trades = {};
+    snap.docs.forEach(d => { window._cache.trades[d.id] = { ...d.data(), projId }; });
+  });
+}
+
+// ── Sync calendar progress options from all trade names ──
+function updateCalProgressOptions() {
+  const allTradeNames = [...new Set(
+    Object.values(window._projMeta).flatMap(m => m.tradeNames||[])
+  )];
+  if (!allTradeNames.length) return;
+  const opts = allTradeNames.map(n=>`<option>${n}</option>`).join('');
+  ['ev2-progress','ee2-progress'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const cur = el.value; el.innerHTML = opts; [...el.options].forEach(o=>o.selected=o.value===cur); }
+  });
+}
+
+async function syncTradesToCalendar(projId, projName, tradeDocs) {
+  // Remove old trade-synced events for this project
+  const evSnap = await getDocs(collection(db,'events'));
+  const toDelete = evSnap.docs.filter(d => d.data().syncedProjId === projId);
+  for (const d of toDelete) await deleteDoc(doc(db,'events',d.id));
+  // Add new ones
+  for (const td of tradeDocs) {
+    const t = td.data();
+    const entries = [];
+    if (t.planIn) entries.push({ date:t.planIn, label:'📥 進場', type:'plan' });
+    if (t.planOut) entries.push({ date:t.planOut, label:'📤 退場', type:'plan' });
+    if (t.realIn && t.realIn !== t.planIn) entries.push({ date:t.realIn, label:'📥 實際進場', type:'real' });
+    if (t.realOut && t.realOut !== t.planOut) entries.push({ date:t.realOut, label:'📤 實際退場', type:'real' });
+    for (const e of entries) {
+      await addDoc(collection(db,'events'), {
+        name: `${t.name||''} ${e.label}`,
+        date: e.date,
+        proj: projName,
+        progress: t.name||'',
+        trade: t.vendor||'',
+        payment: '',
+        note: t.note||'',
+        syncedProjId: projId,
+        syncedTradeId: td.id,
+        createdAt: serverTimestamp()
+      });
+    }
+  }
+}
+
+window.saveTrade = async () => {
+  const projId = document.getElementById('t-projId').value;
+  const name = document.getElementById('t-name').value; if(!name) return;
+  const planIn = document.getElementById('t-plan-in').value;
+  const planOut = document.getElementById('t-plan-out').value;
+  const realIn = document.getElementById('t-real-in').value;
+  const realOut = document.getElementById('t-real-out').value;
+  const planDays = await calcWorkDays(planIn, planOut);
+  const realDays = await calcWorkDays(realIn, realOut);
+  await addDoc(collection(db,`projects/${projId}/trades`), {
+    name, vendor:document.getElementById('t-vendor').value,
+    planIn, planOut, planDays,
+    realIn, realOut, realDays,
+    note: document.getElementById('t-note').value,
+    createdAt: serverTimestamp()
+  });
+  closeModal('addTrade');
+};
+
+window.openEditTrade = (projId, tradeId) => {
+  const t = window._cache.trades?.[tradeId]; if(!t) return;
+  document.getElementById('et-id').value = tradeId;
+  document.getElementById('et-projId').value = projId;
+  document.getElementById('et-vendor').value = t.vendor||'';
+  document.getElementById('et-plan-in').value = t.planIn||'';
+  document.getElementById('et-plan-out').value = t.planOut||'';
+  document.getElementById('et-real-in').value = t.realIn||'';
+  document.getElementById('et-real-out').value = t.realOut||'';
+  document.getElementById('et-plan-days').value = t.planDays||'';
+  document.getElementById('et-real-days').value = t.realDays||'';
+  document.getElementById('et-note').value = t.note||'';
+  // Restore phase
+  const isDesign = DESIGN_TRADE_OPTS.includes(t.name);
+  document.getElementById('et-phase').value = isDesign ? '設計階段' : '工程階段';
+  syncTradeNameOpts('et-phase', 'et-name', t.name);
+  // Update labels based on phase
+  const inLbl = isDesign ? '開始' : '進場';
+  const outLbl = isDesign ? '完成' : '退場';
+  document.querySelector('label[for="et-plan-in"]') && (document.querySelector('label[for="et-plan-in"]').textContent = `預計${inLbl}`);
+  document.querySelector('label[for="et-plan-out"]') && (document.querySelector('label[for="et-plan-out"]').textContent = `預計${outLbl}`);
+  document.querySelector('label[for="et-real-in"]') && (document.querySelector('label[for="et-real-in"]').textContent = `實際${inLbl}`);
+  document.querySelector('label[for="et-real-out"]') && (document.querySelector('label[for="et-real-out"]').textContent = `實際${outLbl}`);
+  openModal('editTrade');
+};
+
+window.updateTrade = async () => {
+  const id = document.getElementById('et-id').value;
+  const projId = document.getElementById('et-projId').value;
+  const planIn = document.getElementById('et-plan-in').value;
+  const planOut = document.getElementById('et-plan-out').value;
+  const realIn = document.getElementById('et-real-in').value;
+  const realOut = document.getElementById('et-real-out').value;
+  const planDays = await calcWorkDays(planIn, planOut);
+  const realDays = await calcWorkDays(realIn, realOut);
+  await updateDoc(doc(db,`projects/${projId}/trades`,id), {
+    name: document.getElementById('et-name').value,
+    vendor: document.getElementById('et-vendor').value,
+    planIn, planOut, planDays,
+    realIn, realOut, realDays,
+    note: document.getElementById('et-note').value,
+  });
+  closeModal('editTrade');
+};
+
+window.deleteTradeById = async () => {
+  const id = document.getElementById('et-id').value;
+  const projId = document.getElementById('et-projId').value;
+  if(!confirm('確定要刪除此工種？')) return;
+  await deleteDoc(doc(db,`projects/${projId}/trades`,id));
+  closeModal('editTrade');
+};
+
+// ── Trade Drag & Drop ──
+let _dragSrc = null;
+
+window.tradeDragStart = (e) => {
+  _dragSrc = e.currentTarget;
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+};
+
+window.tradeDragOver = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  if (row !== _dragSrc) {
+    row.style.borderTop = '2px solid var(--accent)';
+  }
+};
+
+window.tradeDragEnd = (e) => {
+  e.currentTarget.style.opacity = '';
+  // Remove all border highlights
+  document.querySelectorAll('.trade-table tr').forEach(r => r.style.borderTop = '');
+};
+
+window.tradeDrop = async (e, projId) => {
+  e.preventDefault();
+  const targetRow = e.currentTarget;
+  targetRow.style.borderTop = '';
+  if (!_dragSrc || _dragSrc === targetRow) return;
+
+  const tbody = document.getElementById(`trade-tbody-${projId}`);
+  if (!tbody) return;
+
+  // Get current order
+  const rows = [...tbody.querySelectorAll('tr')];
+  const srcIdx = rows.indexOf(_dragSrc);
+  const tgtIdx = rows.indexOf(targetRow);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+
+  // Reorder DOM
+  if (srcIdx < tgtIdx) tbody.insertBefore(_dragSrc, targetRow.nextSibling);
+  else tbody.insertBefore(_dragSrc, targetRow);
+
+  // Save new order to Firebase
+  const newRows = [...tbody.querySelectorAll('tr')];
+  const updates = newRows.map((r, i) => ({ id: r.dataset.id, sortOrder: i }));
+  for (const u of updates) {
+    if (u.id) await updateDoc(doc(db, `projects/${projId}/trades`, u.id), { sortOrder: u.sortOrder });
+  }
+};
+
+window.initApp = initApp;
+</script>
+</body>
+</html>
