@@ -2169,34 +2169,45 @@ function updateCalProgressOptions() {
   });
 }
 
+// Debounce timers for sync
+const _syncTimers = {};
+
 async function syncTradesToCalendar(projId, projName, tradeDocs) {
-  // Remove old trade-synced events for this project
-  const evSnap = await getDocs(collection(db,'events'));
-  const toDelete = evSnap.docs.filter(d => d.data().syncedProjId === projId);
-  for (const d of toDelete) await deleteDoc(doc(db,'events',d.id));
-  // Add new ones
-  for (const td of tradeDocs) {
-    const t = td.data();
-    const entries = [];
-    if (t.planIn) entries.push({ date:t.planIn, label:'📥 進場', type:'plan' });
-    if (t.planOut) entries.push({ date:t.planOut, label:'📤 退場', type:'plan' });
-    if (t.realIn && t.realIn !== t.planIn) entries.push({ date:t.realIn, label:'📥 實際進場', type:'real' });
-    if (t.realOut && t.realOut !== t.planOut) entries.push({ date:t.realOut, label:'📤 實際退場', type:'real' });
-    for (const e of entries) {
-      await addDoc(collection(db,'events'), {
-        name: `${t.name||''} ${e.label}`,
-        date: e.date,
-        proj: projName,
-        progress: t.name||'',
-        trade: t.vendor||'',
-        payment: '',
-        note: t.note||'',
-        syncedProjId: projId,
-        syncedTradeId: td.id,
-        createdAt: serverTimestamp()
-      });
-    }
-  }
+  // Debounce: wait 1.5s after last call before actually syncing
+  if (_syncTimers[projId]) clearTimeout(_syncTimers[projId]);
+  _syncTimers[projId] = setTimeout(async () => {
+    try {
+      // Remove old trade-synced events for this project
+      const evSnap = await getDocs(collection(db,'events'));
+      const toDelete = evSnap.docs.filter(d => d.data().syncedProjId === projId);
+      for (const d of toDelete) await deleteDoc(doc(db,'events',d.id));
+
+      // Add new ones - only trades with at least one date
+      for (const td of tradeDocs) {
+        const t = td.data();
+        if (!t.planIn && !t.planOut && !t.realIn && !t.realOut) continue;
+        const entries = [];
+        if (t.planIn) entries.push({ date:t.planIn, label:'📥 進場' });
+        if (t.planOut) entries.push({ date:t.planOut, label:'📤 退場' });
+        if (t.realIn && t.realIn !== t.planIn) entries.push({ date:t.realIn, label:'📥 實際進場' });
+        if (t.realOut && t.realOut !== t.planOut) entries.push({ date:t.realOut, label:'📤 實際退場' });
+        for (const e of entries) {
+          await addDoc(collection(db,'events'), {
+            name: `${t.name||''} ${e.label}`,
+            date: e.date,
+            proj: projName,
+            progress: t.name||'',
+            trade: t.vendor||'',
+            payment: '',
+            note: t.note||'',
+            syncedProjId: projId,
+            syncedTradeId: td.id,
+            createdAt: serverTimestamp()
+          });
+        }
+      }
+    } catch(e) { console.error('sync error', e); }
+  }, 1500);
 }
 
 window.saveTrade = async () => {
