@@ -36,12 +36,12 @@
   --red: #e87a7a; --green: #7ae8b8; --yellow: #e8c97a; --blue: #7ac4e8; --purple: #b87ae8;
 }
 body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; min-height: 100vh; }
-.header { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.header { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:101; }
 .logo { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; }
 .logo-dot { width:8px; height:8px; background:var(--accent); border-radius:50%; }
 .sync-status { font-size:11px; font-family:'DM Mono',monospace; color:var(--text3); }
 .sync-status.live { color:var(--green); }
-.nav-tabs { display:flex; gap:2px; padding:10px 24px 0; background:var(--surface); border-bottom:1px solid var(--border); overflow-x:auto; }
+.nav-tabs { display:flex; gap:2px; padding:10px 24px 0; background:var(--surface); border-bottom:1px solid var(--border); overflow-x:auto; position:sticky; top:53px; z-index:100; }
 .tab { padding:8px 16px; border:none; background:none; color:var(--text2); cursor:pointer; font-family:'Noto Sans TC',sans-serif; font-size:13px; border-bottom:2px solid transparent; transition:all .2s; white-space:nowrap; }
 .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 .tab:hover:not(.active) { color:var(--text); }
@@ -65,7 +65,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', s
 .btn-danger { background:rgba(232,122,122,.15); color:var(--red); border:1px solid rgba(232,122,122,.3); font-size:11px; padding:4px 10px; border-radius:5px; }
 .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:20px; }
 table { width:100%; border-collapse:collapse; }
-thead th { text-align:left; padding:11px 14px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid var(--border); background:var(--surface2); font-weight:500; }
+thead th { text-align:left; padding:11px 14px; font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid var(--border); background:var(--surface2); font-weight:500; position:sticky; top:0; z-index:10; }
+thead th[onclick]:hover { color:var(--text); background:var(--surface3); }
 tbody tr { border-bottom:1px solid rgba(46,49,61,.6); transition:background .15s; }
 tbody tr:last-child { border-bottom:none; }
 tbody tr:hover { background:var(--surface2); }
@@ -145,7 +146,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 .proj-card:hover { border-color: rgba(232,201,122,.3); }
 .proj-card-header {
   display: grid;
-  grid-template-columns: 36px 24px 1fr auto auto auto auto;
+  grid-template-columns: 36px 24px 220px 1fr auto auto auto;
   align-items: center;
   gap: 12px;
   padding: 16px 18px;
@@ -273,12 +274,12 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th onclick="vendorSort('name')" style="cursor:pointer;user-select:none">廠商名稱 <span id="vs-name">⇅</span></th>
-          <th onclick="vendorSort('cat')" style="cursor:pointer;user-select:none">類別 <span id="vs-cat">⇅</span></th>
+          <th onclick="vendorSort('name')" style="cursor:pointer;user-select:none">廠商名稱 <span id="vs-name" style="color:var(--accent);font-size:12px">⇅</span></th>
+          <th onclick="vendorSort('cat')" style="cursor:pointer;user-select:none">類別 <span id="vs-cat" style="color:var(--accent);font-size:12px">⇅</span></th>
           <th>電話</th>
           <th>統編</th>
           <th>銀行帳號</th>
-          <th onclick="vendorSort('projects')" style="cursor:pointer;user-select:none">合作專案 <span id="vs-projects">⇅</span></th>
+          <th onclick="vendorSort('projects')" style="cursor:pointer;user-select:none">合作專案 <span id="vs-projects" style="color:var(--accent);font-size:12px">⇅</span></th>
           <th>操作</th>
         </tr></thead>
         <tbody id="vendor-table"><tr><td colspan="7" class="loading">載入中...</td></tr></tbody>
@@ -1025,7 +1026,11 @@ window.vendorSort = (key) => {
   // Update sort indicators
   ['name','cat','projects'].forEach(k => {
     const el = document.getElementById(`vs-${k}`);
-    if (el) el.textContent = k === _vendorSortKey ? (_vendorSortAsc ? '↑' : '↓') : '⇅';
+    if (el) {
+      el.textContent = k === _vendorSortKey ? (_vendorSortAsc ? '↑' : '↓') : '⇅';
+      el.style.color = k === _vendorSortKey ? 'var(--accent)' : 'var(--text3)';
+      el.style.fontWeight = k === _vendorSortKey ? '700' : '400';
+    }
   });
   renderVendorTable();
 };
