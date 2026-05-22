@@ -841,7 +841,7 @@ async function createProjectTemplate(projId) {
 }
 
 // ── Vendor Project Checkboxes ──
-function populateVendorProjCheckboxes(prefix, selected=[]) {
+window.populateVendorProjCheckboxes = function(prefix, selected=[]) {
   const projects = Object.values(window._cache.projects).map(p=>p.name).filter(Boolean);
   const container = document.getElementById(`${prefix}-proj-checkboxes`);
   if (!container) return;
@@ -851,7 +851,7 @@ function populateVendorProjCheckboxes(prefix, selected=[]) {
       <input type="checkbox" value="${name}" ${selected.includes(name)?'checked':''} style="width:auto">
       ${name}
     </label>`).join('');
-}
+};
 
 // ── Tab ──
 window.switchTab = (id, el) => {
