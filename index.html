@@ -635,8 +635,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
       <div class="form-grid">
         <div class="form-row" style="margin:0"><label>公司抬頭</label><input id="ev-company" placeholder="匯款抬頭公司名稱" autocomplete="off"></div>
-        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="ev-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch',null,null)"></div>
-        <div class="form-row" style="margin:0"><label>分行</label><input id="ev-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch',null,null)"></div>
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="ev-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch')"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="ev-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('ev-bank','ev-branch')"></div>
         <div class="form-row" style="margin:0"><label>帳號</label><input id="ev-account" placeholder="銀行帳號" autocomplete="off"></div>
       </div>
     </div>
@@ -744,8 +744,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div style="font-size:11px;color:var(--blue);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">🏦 電匯資訊</div>
       <div class="form-grid">
         <div class="form-row" style="margin:0"><label>公司抬頭</label><input id="v-company" placeholder="匯款抬頭公司名稱" autocomplete="off"></div>
-        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="v-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch',null,null)"></div>
-        <div class="form-row" style="margin:0"><label>分行</label><input id="v-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch',null,null)"></div>
+        <div class="form-row" style="margin:0"><label>指定電匯銀行</label><input id="v-bank" placeholder="例：彰化銀行 或 彰化" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch')"></div>
+        <div class="form-row" style="margin:0"><label>分行</label><input id="v-branch" placeholder="例：東台北" autocomplete="off" onblur="bankAutocomplete('v-bank','v-branch')"></div>
         <div class="form-row" style="margin:0"><label>帳號</label><input id="v-account" placeholder="銀行帳號" autocomplete="off"></div>
       </div>
     </div>
@@ -899,20 +899,31 @@ const TW_BRANCHES = {
   ],
 };
 
-window.bankAutocomplete = (bankInputId, branchInputId, bankCodeId, branchCodeId) => {
-  const bankVal = document.getElementById(bankInputId).value.trim();
-  if (!bankVal) return;
-  const matched = TW_BANKS.find(b => b.name.includes(bankVal) || bankVal.includes(b.name) || b.code === bankVal);
-  if (matched) {
-    document.getElementById(bankInputId).value = matched.name;
-    if (bankCodeId) document.getElementById(bankCodeId).value = matched.code;
-    // Load branch options if available
-    if (branchInputId && TW_BRANCHES[matched.code]) {
-      const branchVal = document.getElementById(branchInputId).value.trim();
-      const matchedBranch = TW_BRANCHES[matched.code].find(b => b.name.includes(branchVal) || branchVal.includes(b.name));
-      if (matchedBranch) {
-        document.getElementById(branchInputId).value = `${matchedBranch.name}(${matchedBranch.code})`;
+window.bankAutocomplete = (bankInputId, branchInputId) => {
+  const bankEl = document.getElementById(bankInputId);
+  const branchEl = branchInputId ? document.getElementById(branchInputId) : null;
+  const bankVal = bankEl.value.trim();
+
+  if (bankVal) {
+    // Find matching bank
+    const matched = TW_BANKS.find(b =>
+      b.name.includes(bankVal) || bankVal.includes(b.name) || b.code === bankVal
+    );
+    if (matched) {
+      // Set full bank name with 銀行 suffix if not already there
+      bankEl.value = matched.name;
+    } else {
+      // If no match, ensure 銀行 suffix
+      if (bankVal && !bankVal.endsWith('銀行') && !bankVal.endsWith('郵政')) {
+        bankEl.value = bankVal + '銀行';
       }
+    }
+  }
+
+  if (branchEl) {
+    const branchVal = branchEl.value.trim();
+    if (branchVal && !branchVal.endsWith('分行') && !branchVal.endsWith('總行') && !branchVal.endsWith('支行')) {
+      branchEl.value = branchVal + '分行';
     }
   }
 };
