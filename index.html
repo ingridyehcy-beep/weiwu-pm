@@ -144,6 +144,30 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   transition: border-color .2s;
 }
 .proj-card:hover { border-color: rgba(232,201,122,.3); }
+.file-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--surface2);
+  min-height: 60px;
+}
+.file-drop-zone:hover, .file-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(255,200,60,.06);
+}
+.file-drop-hint { font-size:12px; color:var(--text3); pointer-events:none; }
+.file-preview-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; justify-content:center; }
+.file-preview-item { position:relative; display:inline-flex; flex-direction:column; align-items:center; gap:4px; }
+.file-preview-item img { width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid var(--border); }
+.file-preview-item .file-name { font-size:10px; color:var(--text3); max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.file-preview-item .file-remove { position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:var(--red); color:#fff; border:none; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.file-preview-item .file-icon { font-size:32px; }
+.existing-attach { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.existing-attach a { font-size:11px; color:var(--accent); padding:3px 8px; background:var(--surface2); border-radius:4px; text-decoration:none; border:1px solid var(--border); }
+
 .proj-card-header {
   display: grid;
   grid-template-columns: 36px 24px 220px 1fr auto auto auto;
@@ -755,7 +779,26 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div class="form-row"><label>備註事項</label><textarea id="ec-note" rows="2" placeholder="備註內容..."></textarea></div>
     <div class="form-row"><label>追加減事項說明</label><textarea id="ec-adjnote" rows="2" placeholder="追加減原因..."></textarea></div>
     <div class="form-grid" style="margin-top:12px">
-      <div class="form-row"><label>請款狀態</label><select id="ec-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
+      <div class="form-row"><label>請款狀態</label><select id="ec-status" onchange="togglePaymentFields('ec')"><option>草稿</option><option>財務審核中</option><option>總監審核中</option><option>已確認待付款</option><option>付款完成</option></select></div>
+      <div id="ec-payment-section" style="display:none;margin-top:8px">
+        <div style="font-weight:600;color:var(--text2);font-size:13px;margin-bottom:6px">付款完成資訊</div>
+        <div class="form-row"><label>付款時間</label><input id="ec-pay-time" type="datetime-local"></div>
+        <div class="form-row"><label>付款截圖</label>
+          <div id="ec-pay-drop" class="file-drop-zone" ondragover="fileDragOver(event)" ondragleave="fileDragLeave(event)" ondrop="fileDrop(event,'ec-pay-files')" onclick="document.getElementById('ec-pay-files').click()">
+            <div class="file-drop-hint">拖曳或點擊上傳付款截圖</div>
+            <div id="ec-pay-preview" class="file-preview-list"></div>
+          </div>
+          <input type="file" id="ec-pay-files" multiple accept="image/*,.pdf" style="display:none" onchange="fileSelected(this,'ec-pay-preview')">
+        </div>
+      </div>
+      <div style="font-weight:600;color:var(--text2);font-size:13px;margin:8px 0 6px">檢附資料</div>
+      <div class="form-row">
+        <div id="ec-attach-drop" class="file-drop-zone" ondragover="fileDragOver(event)" ondragleave="fileDragLeave(event)" ondrop="fileDrop(event,'ec-attach-files')" onclick="document.getElementById('ec-attach-files').click()">
+          <div class="file-drop-hint">拖曳或點擊上傳發票、單據等附件</div>
+          <div id="ec-attach-preview" class="file-preview-list"></div>
+        </div>
+        <input type="file" id="ec-attach-files" multiple accept="image/*,.pdf" style="display:none" onchange="fileSelected(this,'ec-attach-preview')">
+      </div>
     </div>
     <input type="hidden" id="ec-id">
     <div class="modal-actions">
@@ -885,7 +928,26 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     <div class="form-row"><label>備註事項</label><textarea id="c-note" rows="2" placeholder="備註內容..."></textarea></div>
     <div class="form-row"><label>追加減事項說明</label><textarea id="c-adjnote" rows="2" placeholder="追加減原因..."></textarea></div>
     <div class="form-grid" style="margin-top:12px">
-      <div class="form-row"><label>請款狀態</label><select id="c-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
+      <div class="form-row"><label>請款狀態</label><select id="c-status" onchange="togglePaymentFields('c')"><option>草稿</option><option>財務審核中</option><option>總監審核中</option><option>已確認待付款</option><option>付款完成</option></select></div>
+      <div id="c-payment-section" style="display:none;margin-top:8px">
+        <div style="font-weight:600;color:var(--text2);font-size:13px;margin-bottom:6px">付款完成資訊</div>
+        <div class="form-row"><label>付款時間</label><input id="c-pay-time" type="datetime-local"></div>
+        <div class="form-row"><label>付款截圖</label>
+          <div id="c-pay-drop" class="file-drop-zone" ondragover="fileDragOver(event)" ondragleave="fileDragLeave(event)" ondrop="fileDrop(event,'c-pay-files')" onclick="document.getElementById('c-pay-files').click()">
+            <div class="file-drop-hint">拖曳或點擊上傳付款截圖</div>
+            <div id="c-pay-preview" class="file-preview-list"></div>
+          </div>
+          <input type="file" id="c-pay-files" multiple accept="image/*,.pdf" style="display:none" onchange="fileSelected(this,'c-pay-preview')">
+        </div>
+      </div>
+      <div style="font-weight:600;color:var(--text2);font-size:13px;margin:8px 0 6px">檢附資料</div>
+      <div class="form-row">
+        <div id="c-attach-drop" class="file-drop-zone" ondragover="fileDragOver(event)" ondragleave="fileDragLeave(event)" ondrop="fileDrop(event,'c-attach-files')" onclick="document.getElementById('c-attach-files').click()">
+          <div class="file-drop-hint">拖曳或點擊上傳發票、單據等附件</div>
+          <div id="c-attach-preview" class="file-preview-list"></div>
+        </div>
+        <input type="file" id="c-attach-files" multiple accept="image/*,.pdf" style="display:none" onchange="fileSelected(this,'c-attach-preview')">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('addClaim')">取消</button>
@@ -898,8 +960,10 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 // Re-import for script module scope
 import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const db = getFirestore(getApp());
+const storage = getStorage(getApp());
 
 // ── Global Data Cache (for edit lookups) ──
 window._cache = { projects:{}, vendors:{}, expenses:{}, materials:{}, claims:{} };
@@ -1221,7 +1285,7 @@ window.projDrop = async (e) => {
 // ── Helpers ──
 const badge = (type, label) => `<span class="badge badge-${type}"><span class="badge-dot"></span>${label}</span>`;
 const statusBadge = s => {
-  const m = { '施工中':'yellow','收尾中':'green','完工':'green','規劃中':'gray','緊急':'red','一般':'yellow','輕微':'gray','已付款':'green','待付款':'yellow','逾期':'red','已到貨':'green','運送中':'yellow','製作中':'blue','待訂購':'red','草稿':'gray','業主審核中':'yellow','財務確認中':'yellow','逾期未付':'red','住宅':'blue','商業':'purple' };
+  const m = { '施工中':'yellow','收尾中':'green','完工':'green','規劃中':'gray','緊急':'red','一般':'yellow','輕微':'gray','已付款':'green','待付款':'yellow','逾期':'red','已到貨':'green','運送中':'yellow','製作中':'blue','待訂購':'red','草稿':'gray','財務審核中':'yellow','總監審核中':'blue','已確認待付款':'yellow','付款完成':'green','業主審核中':'yellow','財務確認中':'yellow','逾期未付':'red','住宅':'blue','商業':'purple' };
   return badge(m[s]||'gray', s);
 };
 const fmt = n => 'NT$' + (parseInt(n)||0).toLocaleString();
@@ -1473,7 +1537,7 @@ function listenClaims() {
         <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.applyDate||'—'}</td>
         <td>${statusBadge(p.status||'草稿')}</td>
         <td style="display:flex;gap:6px;flex-wrap:nowrap">
-          <button class="btn btn-ghost btn-sm" onclick="previewClaim('${d.id}')" style="white-space:nowrap">預覽</button>
+          <button class="btn btn-ghost btn-sm" onclick="previewClaim('${d.id}')" style="white-space:nowrap">預覽${(p.attachments||[]).length?'📎':''}</button>
           <button class="btn btn-ghost btn-sm" onclick="openEditClaim('${d.id}')" style="white-space:nowrap">編輯</button>
           <button class="btn-danger" onclick="confirmDelete('claims','${d.id}')">刪除</button>
         </td>
@@ -1587,12 +1651,119 @@ window.saveClaim = async () => {
     amount: total,
     createdAt: serverTimestamp()
   });
+  // Upload attachments & payment screenshots
+  const attachFiles = getFilesFromInput('c-attach-files');
+  const payFiles = getFilesFromInput('c-pay-files');
+  const attachUrls = attachFiles.length ? await uploadFiles(attachFiles, `claims/${ref.id}/attachments`) : [];
+  const payUrls = payFiles.length ? await uploadFiles(payFiles, `claims/${ref.id}/payment`) : [];
+  if (attachUrls.length || payUrls.length) {
+    await updateDoc(doc(db,'claims',ref.id), {
+      attachments: attachUrls,
+      paymentProof: payUrls,
+      payTime: document.getElementById('c-pay-time').value || ''
+    });
+  }
   closeModal('addClaim');
   ['c-proj','c-vendor','c-item','c-content','c-applicant','c-applydate','c-completedate','c-paydate',
    'c-contract','c-contract-adj','c-pretax','c-invoice','c-payee','c-taxid','c-bank','c-branch',
-   'c-account','c-note','c-adjnote'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+   'c-account','c-note','c-adjnote','c-pay-time'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  clearFileInput('c-attach-files','c-attach-preview');
+  clearFileInput('c-pay-files','c-pay-preview');
+  const paySection = document.getElementById('c-payment-section');
+  if (paySection) paySection.style.display = 'none';
 };
 
+
+
+// ── File Upload Helpers ──
+window.fileDragOver = (e) => {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+};
+window.fileDragLeave = (e) => {
+  e.currentTarget.classList.remove('drag-over');
+};
+window.fileDrop = (e, inputId) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const input = document.getElementById(inputId);
+  const previewId = inputId.replace('-files', '-preview');
+  const dt = e.dataTransfer;
+  // Merge with existing files
+  const existing = input._extraFiles || [];
+  const newFiles = [...dt.files];
+  input._extraFiles = [...existing, ...newFiles];
+  renderFilePreviews(input._extraFiles, previewId);
+};
+window.fileSelected = (input, previewId) => {
+  const existing = input._extraFiles || [];
+  const newFiles = [...input.files];
+  input._extraFiles = [...existing, ...newFiles];
+  renderFilePreviews(input._extraFiles, previewId);
+};
+window.renderFilePreviews = (files, previewId) => {
+  const container = document.getElementById(previewId);
+  if (!container) return;
+  container.innerHTML = '';
+  files.forEach((file, i) => {
+    const item = document.createElement('div');
+    item.className = 'file-preview-item';
+    if (file.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      item.appendChild(img);
+    } else {
+      const icon = document.createElement('div');
+      icon.className = 'file-icon';
+      icon.textContent = '📄';
+      item.appendChild(icon);
+    }
+    const name = document.createElement('div');
+    name.className = 'file-name';
+    name.textContent = file.name;
+    item.appendChild(name);
+    const btn = document.createElement('button');
+    btn.className = 'file-remove';
+    btn.textContent = '×';
+    btn.onclick = (e) => { e.stopPropagation(); removeFile(previewId, i); };
+    item.appendChild(btn);
+    container.appendChild(item);
+  });
+};
+window.removeFile = (previewId, index) => {
+  const inputId = previewId.replace('-preview', '-files');
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const files = input._extraFiles || [];
+  files.splice(index, 1);
+  input._extraFiles = files;
+  renderFilePreviews(files, previewId);
+};
+window.togglePaymentFields = (prefix) => {
+  const sel = document.getElementById(`${prefix}-status`);
+  const section = document.getElementById(`${prefix}-payment-section`);
+  if (section) section.style.display = sel.value === '付款完成' ? '' : 'none';
+};
+async function uploadFiles(files, path) {
+  const urls = [];
+  for (const file of files) {
+    const r = storageRef(storage, `${path}/${Date.now()}_${file.name}`);
+    await uploadBytes(r, file);
+    const url = await getDownloadURL(r);
+    urls.push({ name: file.name, url });
+  }
+  return urls;
+}
+function getFilesFromInput(inputId) {
+  const input = document.getElementById(inputId);
+  return input?._extraFiles || [];
+}
+function clearFileInput(inputId, previewId) {
+  const input = document.getElementById(inputId);
+  if (input) { input._extraFiles = []; input.value = ''; }
+  const preview = document.getElementById(previewId);
+  if (preview) preview.innerHTML = '';
+}
 
 window.previewClaim = (id) => {
   const p = window._cache.claims[id]; if(!p) return;
@@ -1762,7 +1933,19 @@ window.previewClaim = (id) => {
 
 <div class="attach">
   <div class="attach-label">檢附資料：</div>
+  ${(p.attachments||[]).map(f => f.url.match(/\.(jpg|jpeg|png|gif|webp)/i)
+    ? `<img src="${f.url}" style="max-width:200px;max-height:150px;border-radius:4px;margin:4px">` 
+    : `<a href="${f.url}" target="_blank" style="display:inline-block;margin:4px;padding:4px 10px;background:#f0f0f0;border-radius:4px;font-size:12px;text-decoration:none;color:#333">📎 ${f.name}</a>`
+  ).join('')}
 </div>
+${(p.paymentProof||[]).length ? `
+<div class="attach" style="margin-top:8px">
+  <div class="attach-label">付款證明：${p.payTime ? '付款時間：'+p.payTime : ''}</div>
+  ${(p.paymentProof||[]).map(f => f.url.match(/\.(jpg|jpeg|png|gif|webp)/i)
+    ? `<img src="${f.url}" style="max-width:200px;max-height:150px;border-radius:4px;margin:4px">` 
+    : `<a href="${f.url}" target="_blank" style="display:inline-block;margin:4px;padding:4px 10px;background:#f0f0f0;border-radius:4px;font-size:12px;text-decoration:none;color:#333">📎 ${f.name}</a>`
+  ).join('')}
+</div>` : ''}
 
 <div class="sign-row">
   <div class="sign-box" style="flex:2">
@@ -1878,6 +2061,34 @@ window.openEditClaim = (id) => {
   setVal('ec-bank', p.bank); setVal('ec-branch', p.branch); setVal('ec-account', p.account);
   setVal('ec-note', p.note); setVal('ec-adjnote', p.adjNote);
   [...document.getElementById('ec-status').options].forEach(o => o.selected = o.value === p.status);
+  // Show/hide payment section
+  const paySection = document.getElementById('ec-payment-section');
+  if (paySection) paySection.style.display = p.status === '付款完成' ? '' : 'none';
+  const payTimeEl = document.getElementById('ec-pay-time');
+  if (payTimeEl) payTimeEl.value = p.payTime || '';
+  // Show existing attachments
+  const attachPreview = document.getElementById('ec-attach-preview');
+  if (attachPreview) {
+    const existing = p.attachments || [];
+    if (existing.length) {
+      attachPreview.innerHTML = '<div class="existing-attach">' +
+        existing.map(f => `<a href="${f.url}" target="_blank">📎 ${f.name}</a>`).join('') + '</div>';
+    } else { attachPreview.innerHTML = ''; }
+  }
+  const payPreview = document.getElementById('ec-pay-preview');
+  if (payPreview) {
+    const existing = p.paymentProof || [];
+    if (existing.length) {
+      payPreview.innerHTML = existing.map(f =>
+        f.url.match(/\.(jpg|jpeg|png|gif|webp)/i)
+          ? `<div class="file-preview-item"><a href="${f.url}" target="_blank"><img src="${f.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"></a><div class="file-name">${f.name}</div></div>`
+          : `<div class="file-preview-item"><a href="${f.url}" target="_blank"><div class="file-icon">📄</div></a><div class="file-name">${f.name}</div></div>`
+      ).join('');
+    } else { payPreview.innerHTML = ''; }
+  }
+  // Reset new file inputs
+  clearFileInput('ec-attach-files','');
+  clearFileInput('ec-pay-files','');
   openModal('editClaim');
 };
 
@@ -1969,7 +2180,24 @@ window.updateClaim = async () => {
     adjNote: document.getElementById('ec-adjnote').value,
     status: document.getElementById('ec-status').value,
     amount: total,
+    payTime: document.getElementById('ec-pay-time').value || '',
   });
+  // Upload new attachments if any
+  const attachFiles = getFilesFromInput('ec-attach-files');
+  const payFiles = getFilesFromInput('ec-pay-files');
+  if (attachFiles.length || payFiles.length) {
+    const existing = window._cache.claims[id] || {};
+    const existAttach = existing.attachments || [];
+    const existPay = existing.paymentProof || [];
+    const newAttach = attachFiles.length ? await uploadFiles(attachFiles, `claims/${id}/attachments`) : [];
+    const newPay = payFiles.length ? await uploadFiles(payFiles, `claims/${id}/payment`) : [];
+    await updateDoc(doc(db,'claims',id), {
+      attachments: [...existAttach, ...newAttach],
+      paymentProof: [...existPay, ...newPay],
+    });
+  }
+  clearFileInput('ec-attach-files','ec-attach-preview');
+  clearFileInput('ec-pay-files','ec-pay-preview');
   closeModal('editClaim');
 };
 
