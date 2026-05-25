@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WEIWU 室內設計工程管理系統</title>
+<title>WEIWU Design 專案管理</title>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -217,7 +217,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 <body>
 
 <div class="header">
-  <div class="logo"><div class="logo-dot"></div>WEIWU 室內設計工程管理</div>
+  <div class="logo"><div class="logo-dot"></div>WEIWU Design 專案管理</div>
   <div class="sync-status live" id="sync-status">● 即時同步中</div>
   <div style="display:flex;gap:8px">
     <button class="btn btn-ghost btn-sm" onclick="exportExcel()">📊 匯出 Excel</button>
@@ -226,17 +226,17 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 </div>
 
 <div class="nav-tabs">
-  <button class="tab active" onclick="switchTab('progress',this)">📊 工程進度</button>
+  <button class="tab active" onclick="switchTab('progress',this)">📊 專案進度總覽</button>
   <button class="tab" onclick="switchTab('vendor',this)">🏢 廠商管理</button>
   <button class="tab" onclick="switchTab('budget',this)">💰 費用預算</button>
   <button class="tab" onclick="switchTab('material',this)">📦 材料清單</button>
   <button class="tab" onclick="switchTab('claim',this)">📋 請款流程</button>
-  <button class="tab" onclick="switchTab('calendar',this)">📅 工程日曆</button>
+  <button class="tab" onclick="switchTab('calendar',this)">📅 日曆</button>
 </div>
 
 <div class="main">
 
-  <!-- 工程進度 -->
+  <!-- 專案進度總覽 -->
   <div id="tab-progress" class="tab-content active">
     <div class="stats-row">
       <div class="stat-card"><div class="stat-label">進行中專案</div><div class="stat-value" style="color:var(--blue)" id="s-projects">—</div><div class="stat-sub">即時更新</div></div>
@@ -859,6 +859,27 @@ window._projMeta = {}; // auto-computed per project from trades
 
 window.confirmDelete = async (col, id) => {
   if (!confirm('確定要刪除嗎？此操作無法復原。')) return;
+
+  // If deleting a project, clean up: remove from vendors' projects arrays & delete synced calendar events
+  if (col === 'projects') {
+    const projData = window._cache.projects[id];
+    const projName = projData?.name;
+    if (projName) {
+      // Remove project name from all vendors
+      const affectedVendors = Object.entries(window._cache.vendors).filter(([, v]) => (v.projects||[]).includes(projName));
+      for (const [vid, vdata] of affectedVendors) {
+        const updatedProjs = (vdata.projects||[]).filter(p => p !== projName);
+        await updateDoc(doc(db, 'vendors', vid), { projects: updatedProjs });
+      }
+      // Delete synced calendar events for this project
+      try {
+        const evSnap = await getDocs(collection(db,'events'));
+        const toDelete = evSnap.docs.filter(d => d.data().syncedProjId === id);
+        for (const d of toDelete) await deleteDoc(doc(db,'events',d.id));
+      } catch(e) { console.error('cleanup events error', e); }
+    }
+  }
+
   await deleteDoc(doc(db, col, id));
 };
 
@@ -2212,41 +2233,56 @@ function updateCalProgressOptions() {
 const _syncTimers = {};
 
 async function syncTradesToCalendar(projId, projName, tradeDocs) {
-  // Debounce: wait 1.5s after last call before actually syncing
+  // Debounce per project: wait 2s after last call
   if (_syncTimers[projId]) clearTimeout(_syncTimers[projId]);
   _syncTimers[projId] = setTimeout(async () => {
+    // Guard: skip if another sync for same project is running
+    if (window._syncRunning?.[projId]) return;
+    window._syncRunning = window._syncRunning || {};
+    window._syncRunning[projId] = true;
     try {
-      // Remove old trade-synced events for this project
-      const evSnap = await getDocs(collection(db,'events'));
-      const toDelete = evSnap.docs.filter(d => d.data().syncedProjId === projId);
-      for (const d of toDelete) await deleteDoc(doc(db,'events',d.id));
-
-      // Add new ones - only trades with at least one date
+      // Build desired event set from trades
+      const desired = [];
       for (const td of tradeDocs) {
         const t = td.data();
         if (!t.planIn && !t.planOut && !t.realIn && !t.realOut) continue;
-        const entries = [];
-        if (t.planIn) entries.push({ date:t.planIn, label:'📥 進場' });
-        if (t.planOut) entries.push({ date:t.planOut, label:'📤 退場' });
-        if (t.realIn && t.realIn !== t.planIn) entries.push({ date:t.realIn, label:'📥 實際進場' });
-        if (t.realOut && t.realOut !== t.planOut) entries.push({ date:t.realOut, label:'📤 實際退場' });
-        for (const e of entries) {
-          await addDoc(collection(db,'events'), {
-            name: `${t.name||''} ${e.label}`,
-            date: e.date,
-            proj: projName,
-            progress: t.name||'',
-            trade: t.vendor||'',
-            payment: '',
-            note: t.note||'',
-            syncedProjId: projId,
-            syncedTradeId: td.id,
-            createdAt: serverTimestamp()
-          });
+        if (t.planIn)  desired.push({ key:`${td.id}|plan-in`,  date:t.planIn,  name:`${t.name||''} 📥 進場`,        syncedProjId:projId, syncedTradeId:td.id, syncKey:'plan-in',  proj:projName, progress:t.name||'', trade:t.vendor||'', payment:'', note:t.note||'' });
+        if (t.planOut) desired.push({ key:`${td.id}|plan-out`, date:t.planOut, name:`${t.name||''} 📤 退場`,        syncedProjId:projId, syncedTradeId:td.id, syncKey:'plan-out', proj:projName, progress:t.name||'', trade:t.vendor||'', payment:'', note:t.note||'' });
+        if (t.realIn  && t.realIn  !== t.planIn)  desired.push({ key:`${td.id}|real-in`,  date:t.realIn,  name:`${t.name||''} 📥 實際進場`, syncedProjId:projId, syncedTradeId:td.id, syncKey:'real-in',  proj:projName, progress:t.name||'', trade:t.vendor||'', payment:'', note:t.note||'' });
+        if (t.realOut && t.realOut !== t.planOut) desired.push({ key:`${td.id}|real-out`, date:t.realOut, name:`${t.name||''} 📤 實際退場`, syncedProjId:projId, syncedTradeId:td.id, syncKey:'real-out', proj:projName, progress:t.name||'', trade:t.vendor||'', payment:'', note:t.note||'' });
+      }
+
+      // Fetch existing synced events for this project
+      const evSnap = await getDocs(collection(db,'events'));
+      const existing = evSnap.docs.filter(d => d.data().syncedProjId === projId);
+
+      // Build lookup of existing by syncKey
+      const existingMap = {};
+      for (const d of existing) {
+        const ev = d.data();
+        const k = `${ev.syncedTradeId}|${ev.syncKey}`;
+        existingMap[k] = { docId: d.id, ev };
+      }
+
+      const desiredKeys = new Set(desired.map(e => e.key));
+
+      // Delete stale events (no longer in desired set)
+      for (const [k, { docId }] of Object.entries(existingMap)) {
+        if (!desiredKeys.has(k)) {
+          await deleteDoc(doc(db,'events',docId));
         }
       }
-    } catch(e) { console.error('sync error', e); }
-  }, 1500);
+
+      // Add missing events (in desired but not existing)
+      for (const e of desired) {
+        if (!existingMap[e.key]) {
+          const { key, ...data } = e;
+          await addDoc(collection(db,'events'), { ...data, createdAt: serverTimestamp() });
+        }
+      }
+    } catch(err) { console.error('sync error', err); }
+    finally { window._syncRunning[projId] = false; }
+  }, 2000);
 }
 
 window.saveTrade = async () => {
