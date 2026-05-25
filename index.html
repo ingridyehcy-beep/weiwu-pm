@@ -331,8 +331,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>請款單號</th><th>所屬專案</th><th>廠商</th><th>金額</th><th>申請日期</th><th>預計付款日</th><th>狀態</th><th>操作</th></tr></thead>
-        <tbody id="claim-table"><tr><td colspan="8" class="loading">載入中...</td></tr></tbody>
+        <thead><tr><th>請款單號</th><th>所屬專案</th><th>廠商</th><th>工程項目</th><th>未稅金額</th><th>含稅金額</th><th>申請日期</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody id="claim-table"><tr><td colspan="9" class="loading">載入中...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -724,13 +724,37 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 </div>
 
 <div class="modal-backdrop" id="modal-editClaim">
-  <div class="modal">
+  <div class="modal" style="max-width:700px;width:95vw">
     <div class="modal-title">✏️ 編輯請款單</div>
     <div class="form-grid">
       <div class="form-row"><label>所屬專案</label><input id="ec-proj" placeholder="專案名稱"></div>
       <div class="form-row"><label>廠商名稱</label><input id="ec-vendor" placeholder="廠商名稱"></div>
-      <div class="form-row"><label>請款金額 (NT$)</label><input id="ec-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>工程項目</label><input id="ec-item" placeholder="例：燈具設備"></div>
+      <div class="form-row"><label>項目內容</label><input id="ec-content" placeholder="例：鋁框門"></div>
+      <div class="form-row"><label>申請單位/人員</label><input id="ec-applicant" placeholder="例：Erika"></div>
+      <div class="form-row"><label>申請日期</label><input id="ec-applydate" type="date"></div>
+      <div class="form-row"><label>驗收/完工日期</label><input id="ec-completedate" type="date"></div>
       <div class="form-row"><label>預計付款日</label><input id="ec-paydate" type="date"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">金額資訊</div>
+    <div class="form-grid">
+      <div class="form-row"><label>合約金額／未稅（不含監工費）</label><input id="ec-contract" type="number" placeholder="0"></div>
+      <div class="form-row"><label>合約金額追加減／未稅</label><input id="ec-contract-adj" type="number" placeholder="0"></div>
+      <div class="form-row"><label>未稅金額</label><input id="ec-pretax" type="number" placeholder="0"></div>
+      <div class="form-row"><label>發票單號</label><input id="ec-invoice" placeholder="例：ZX-37696025"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">廠商收款資訊</div>
+    <div class="form-grid">
+      <div class="form-row"><label>收款公司抬頭（戶名）</label><input id="ec-payee" placeholder="公司全名"></div>
+      <div class="form-row"><label>收款公司統編/身分證字號</label><input id="ec-taxid" placeholder="統一編號"></div>
+      <div class="form-row"><label>指定電匯銀行</label><input id="ec-bank" placeholder="例：台灣土地"></div>
+      <div class="form-row"><label>分行</label><input id="ec-branch" placeholder="例：樹林"></div>
+      <div class="form-row"><label>指定電匯帳號</label><input id="ec-account" placeholder="帳號"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">備註</div>
+    <div class="form-row"><label>備註事項</label><textarea id="ec-note" rows="2" placeholder="備註內容..."></textarea></div>
+    <div class="form-row"><label>追加減事項說明</label><textarea id="ec-adjnote" rows="2" placeholder="追加減原因..."></textarea></div>
+    <div class="form-grid" style="margin-top:12px">
       <div class="form-row"><label>請款狀態</label><select id="ec-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
     </div>
     <input type="hidden" id="ec-id">
@@ -830,13 +854,37 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
 </div>
 
 <div class="modal-backdrop" id="modal-addClaim">
-  <div class="modal">
+  <div class="modal" style="max-width:700px;width:95vw">
     <div class="modal-title">＋ 新增請款單</div>
     <div class="form-grid">
       <div class="form-row"><label>所屬專案</label><input id="c-proj" placeholder="專案名稱"></div>
       <div class="form-row"><label>廠商名稱</label><input id="c-vendor" placeholder="廠商名稱"></div>
-      <div class="form-row"><label>請款金額 (NT$)</label><input id="c-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>工程項目</label><input id="c-item" placeholder="例：燈具設備"></div>
+      <div class="form-row"><label>項目內容</label><input id="c-content" placeholder="例：鋁框門"></div>
+      <div class="form-row"><label>申請單位/人員</label><input id="c-applicant" placeholder="例：Erika"></div>
+      <div class="form-row"><label>申請日期</label><input id="c-applydate" type="date"></div>
+      <div class="form-row"><label>驗收/完工日期</label><input id="c-completedate" type="date"></div>
       <div class="form-row"><label>預計付款日</label><input id="c-paydate" type="date"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">金額資訊</div>
+    <div class="form-grid">
+      <div class="form-row"><label>合約金額／未稅（不含監工費）</label><input id="c-contract" type="number" placeholder="0"></div>
+      <div class="form-row"><label>合約金額追加減／未稅</label><input id="c-contract-adj" type="number" placeholder="0"></div>
+      <div class="form-row"><label>未稅金額</label><input id="c-pretax" type="number" placeholder="0"></div>
+      <div class="form-row"><label>發票單號</label><input id="c-invoice" placeholder="例：ZX-37696025"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">廠商收款資訊</div>
+    <div class="form-grid">
+      <div class="form-row"><label>收款公司抬頭（戶名）</label><input id="c-payee" placeholder="公司全名"></div>
+      <div class="form-row"><label>收款公司統編/身分證字號</label><input id="c-taxid" placeholder="統一編號"></div>
+      <div class="form-row"><label>指定電匯銀行</label><input id="c-bank" placeholder="例：台灣土地"></div>
+      <div class="form-row"><label>分行</label><input id="c-branch" placeholder="例：樹林"></div>
+      <div class="form-row"><label>指定電匯帳號</label><input id="c-account" placeholder="帳號"></div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">備註</div>
+    <div class="form-row"><label>備註事項</label><textarea id="c-note" rows="2" placeholder="備註內容..."></textarea></div>
+    <div class="form-row"><label>追加減事項說明</label><textarea id="c-adjnote" rows="2" placeholder="追加減原因..."></textarea></div>
+    <div class="form-grid" style="margin-top:12px">
       <div class="form-row"><label>請款狀態</label><select id="c-status"><option>草稿</option><option>業主審核中</option><option>財務確認中</option><option>已付款</option><option>逾期未付</option></select></div>
     </div>
     <div class="modal-actions">
@@ -1409,18 +1457,26 @@ function listenClaims() {
   onSnapshot(collection(db,'claims'), snap => {
     snap.docs.forEach(d => window._cache.claims[d.id] = d.data());
     const tb = document.getElementById('claim-table');
-    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">尚無請款單</td></tr>'; return; }
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">尚無請款單</td></tr>'; return; }
     tb.innerHTML = snap.docs.map((d,i) => {
       const p = d.data();
+      const pretax = parseFloat(p.pretax||0);
+      const tax = Math.round(pretax * 0.05);
+      const total = pretax + tax;
       return `<tr>
         <td style="font-family:monospace;font-size:12px">CL-${String(i+1).padStart(3,'0')}</td>
         <td>${p.proj||''}</td>
         <td style="color:var(--text2)">${p.vendor||''}</td>
-        <td style="font-family:monospace;color:var(--yellow)">${fmt(p.amount)}</td>
+        <td style="color:var(--text3);font-size:12px">${p.item||'—'}</td>
+        <td style="font-family:monospace;color:var(--text2)">${pretax?fmt(pretax):'—'}</td>
+        <td style="font-family:monospace;color:var(--yellow);font-weight:600">${total?fmt(total):'—'}</td>
         <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.applyDate||'—'}</td>
-        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.payDate||'—'}</td>
         <td>${statusBadge(p.status||'草稿')}</td>
-        <td style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditClaim('${d.id}')" style="white-space:nowrap">編輯</button><button class="btn-danger" onclick="confirmDelete('claims','${d.id}')">刪除</button></td>
+        <td style="display:flex;gap:6px;flex-wrap:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="previewClaim('${d.id}')" style="white-space:nowrap">預覽</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditClaim('${d.id}')" style="white-space:nowrap">編輯</button>
+          <button class="btn-danger" onclick="confirmDelete('claims','${d.id}')">刪除</button>
+        </td>
       </tr>`;
     }).join('');
   });
@@ -1504,9 +1560,240 @@ window.saveMaterial = async () => {
 };
 
 window.saveClaim = async () => {
-  const amount = document.getElementById('c-amount').value; if (!amount) return;
-  await addDoc(collection(db,'claims'), { proj:document.getElementById('c-proj').value, vendor:document.getElementById('c-vendor').value, amount, payDate:document.getElementById('c-paydate').value, status:document.getElementById('c-status').value, applyDate:today(), createdAt:serverTimestamp() });
-  closeModal('addClaim'); ['c-proj','c-vendor','c-amount','c-paydate'].forEach(id=>document.getElementById(id).value='');
+  const pretax = parseFloat(document.getElementById('c-pretax').value)||0;
+  const tax = Math.round(pretax * 0.05);
+  const total = pretax + tax;
+  await addDoc(collection(db,'claims'), {
+    proj: document.getElementById('c-proj').value,
+    vendor: document.getElementById('c-vendor').value,
+    item: document.getElementById('c-item').value,
+    content: document.getElementById('c-content').value,
+    applicant: document.getElementById('c-applicant').value,
+    applyDate: document.getElementById('c-applydate').value || today(),
+    completeDate: document.getElementById('c-completedate').value,
+    payDate: document.getElementById('c-paydate').value,
+    contract: parseFloat(document.getElementById('c-contract').value)||0,
+    contractAdj: parseFloat(document.getElementById('c-contract-adj').value)||0,
+    pretax, tax, total,
+    invoice: document.getElementById('c-invoice').value,
+    payee: document.getElementById('c-payee').value,
+    taxid: document.getElementById('c-taxid').value,
+    bank: document.getElementById('c-bank').value,
+    branch: document.getElementById('c-branch').value,
+    account: document.getElementById('c-account').value,
+    note: document.getElementById('c-note').value,
+    adjNote: document.getElementById('c-adjnote').value,
+    status: document.getElementById('c-status').value,
+    amount: total,
+    createdAt: serverTimestamp()
+  });
+  closeModal('addClaim');
+  ['c-proj','c-vendor','c-item','c-content','c-applicant','c-applydate','c-completedate','c-paydate',
+   'c-contract','c-contract-adj','c-pretax','c-invoice','c-payee','c-taxid','c-bank','c-branch',
+   'c-account','c-note','c-adjnote'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+};
+
+
+window.previewClaim = (id) => {
+  const p = window._cache.claims[id]; if(!p) return;
+  const pretax = parseFloat(p.pretax||0);
+  const tax = Math.round(pretax * 0.05);
+  const total = pretax + tax;
+  const contract = parseFloat(p.contract||0);
+  const contractAdj = parseFloat(p.contractAdj||0);
+  const contractTotal = contract + contractAdj;
+  const contractTax = Math.round(contractTotal * 0.05);
+  const contractGross = contractTotal + contractTax;
+  const profit = contractTotal - pretax;
+  const profitRatio = contractTotal ? Math.round(profit/contractTotal*100) : 0;
+  const fmtN = n => n ? n.toLocaleString('zh-TW') : '—';
+  const fmtPct = n => n ? `${n}%` : '—';
+
+  const html = `<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8">
+<title>請款單 - ${p.proj||''}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: '微軟正黑體','Microsoft JhengHei',Arial,sans-serif; font-size: 13px; color: #000; background: #fff; padding: 20px; }
+  @media print { body { padding: 0; } .no-print { display:none; } }
+  h1 { text-align:center; font-size:22px; letter-spacing:8px; margin-bottom:16px; border-bottom:3px solid #000; padding-bottom:8px; }
+  .info-row { display:flex; gap:0; margin-bottom:4px; }
+  .info-row > div { flex:1; display:flex; gap:4px; align-items:center; font-size:12px; }
+  .info-label { color:#555; min-width:80px; }
+  .info-val { font-weight:600; border-bottom:1px solid #aaa; flex:1; padding: 1px 4px; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; }
+  th, td { border:1px solid #888; padding:6px 8px; text-align:center; font-size:12px; }
+  th { background:#e8e8e8; font-weight:700; }
+  .th-blue { background:#d0e8f8; }
+  .th-pink { background:#f8d0d0; }
+  .th-green { background:#d0f0d8; }
+  .td-blue { color:#1565c0; font-weight:700; }
+  .td-red { color:#c62828; font-weight:700; }
+  .td-green { color:#2e7d32; font-weight:700; }
+  .section { border:1px solid #aaa; padding:8px 12px; margin:8px 0; }
+  .section-label { color:#c62828; font-weight:700; font-size:12px; margin-bottom:4px; }
+  .sign-row { display:flex; gap:0; margin-top:16px; }
+  .sign-box { flex:1; border:1px solid #888; padding:8px; min-height:80px; }
+  .sign-title { font-weight:700; font-size:12px; color:#333; margin-bottom:4px; }
+  .sign-date { font-size:11px; color:#555; text-align:right; margin-top:8px; border-top:1px dashed #aaa; padding-top:4px; }
+  .print-btn { display:block; margin:16px auto; padding:10px 32px; background:#1a56db; color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; }
+  .attach { border:1px dashed #aaa; padding:8px; margin-top:12px; min-height:60px; }
+  .attach-label { font-size:11px; color:#555; margin-bottom:4px; }
+</style>
+</head><body>
+<button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 儲存 PDF</button>
+<h1>工 程 ／ 軟 裝 請 款 單</h1>
+
+<div class="info-row">
+  <div><span class="info-label">專案名稱：</span><span class="info-val">${p.proj||''}</span></div>
+  <div><span class="info-label">工程項目：</span><span class="info-val">${p.item||''}</span></div>
+  <div><span class="info-label">申請單位/人員：</span><span class="info-val">${p.applicant||''}</span></div>
+</div>
+<div class="info-row">
+  <div><span class="info-label">驗收/完工日期：</span><span class="info-val">${p.completeDate||''}</span></div>
+  <div><span class="info-label">項目內容：</span><span class="info-val">${p.content||''}</span></div>
+  <div><span class="info-label">申請日期：</span><span class="info-val">${p.applyDate||''}</span></div>
+</div>
+
+<table>
+  <tr>
+    <th>合約金額／未稅<br><small>(不含監工費)</small></th>
+    <th class="th-pink">合約金額<u>追加減</u>／未稅<br><small>(不含監工費)</small></th>
+    <th>發包金額／含稅</th>
+    <th class="th-pink">發包金額<u>追加減</u>／含稅</th>
+    <th>利潤</th>
+    <th>利潤比</th>
+  </tr>
+  <tr>
+    <td>${fmtN(contract)}</td>
+    <td class="td-red">${contractAdj ? (contractAdj>0?'+':'')+fmtN(contractAdj) : '—'}</td>
+    <td>${fmtN(total)}</td>
+    <td class="td-red">—</td>
+    <td>${fmtN(profit)}</td>
+    <td class="td-green">${fmtPct(profitRatio)}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td style="background:#f5f5f5;font-weight:700">收款公司抬頭(戶名)</td>
+    <td colspan="3">${p.payee||''}</td>
+    <td style="background:#f5f5f5;font-weight:700">收款公司統編/身分證字號</td>
+    <td>${p.taxid||''}</td>
+  </tr>
+  <tr>
+    <td style="background:#f5f5f5;font-weight:700">指定電匯銀行</td>
+    <td>${p.bank||''}</td>
+    <td style="background:#f5f5f5;font-weight:700">銀行</td>
+    <td>${p.branch||''}</td>
+    <td style="background:#f5f5f5;font-weight:700">分行</td>
+    <td style="background:#f5f5f5;font-weight:700">指定電匯帳號</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>${p.account||''}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th>請款項次</th>
+    <th>發包／發票開立金額</th>
+    <th>已請款金額</th>
+    <th>%</th>
+    <th class="th-blue">本期請款金額</th>
+    <th class="th-blue">%</th>
+    <th>累積請款</th>
+    <th>%</th>
+    <th>請款憑據</th>
+    <th>發票單號</th>
+  </tr>
+  <tr>
+    <td>未稅金額</td>
+    <td>${fmtN(pretax)}</td>
+    <td>—</td>
+    <td>0%</td>
+    <td class="td-blue">${fmtN(pretax)}</td>
+    <td class="td-blue">100%</td>
+    <td>${fmtN(pretax)}</td>
+    <td>100%</td>
+    <td>發票</td>
+    <td>${p.invoice||''}</td>
+  </tr>
+  <tr>
+    <td>營業稅(5%)</td>
+    <td>${fmtN(tax)}</td>
+    <td>-</td>
+    <td></td>
+    <td class="td-blue">${fmtN(tax)}</td>
+    <td></td>
+    <td>${fmtN(tax)}</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td style="font-weight:700;color:#1565c0">總金額(含稅)</td>
+    <td>${fmtN(total)}</td>
+    <td>-</td>
+    <td></td>
+    <td class="td-blue" style="font-size:14px;font-weight:700">$ ${fmtN(total)}</td>
+    <td></td>
+    <td>${fmtN(total)}</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+
+<div class="section">
+  <div style="min-height:50px">${p.note ? p.note.split('\n').join('<br>') : ''}</div>
+  <div style="font-size:11px;color:#555;margin-top:4px">備註事項</div>
+</div>
+
+<div class="section">
+  <div class="section-label">追加減事項<br>原因說明</div>
+  <div style="min-height:40px">${p.adjNote ? p.adjNote.split('\n').join('<br>') : ''}</div>
+</div>
+
+<div class="attach">
+  <div class="attach-label">檢附資料：</div>
+</div>
+
+<div class="sign-row">
+  <div class="sign-box" style="flex:2">
+    <div class="sign-title">財務</div>
+    <div style="min-height:60px"></div>
+    <div class="sign-date">日期 ___________</div>
+  </div>
+  <div style="flex:1"></div>
+</div>
+<div class="sign-row" style="margin-top:-1px">
+  <div class="sign-box" style="flex:2">
+    <div class="sign-title">審閱意見</div>
+    <div style="min-height:60px"></div>
+    <div class="sign-date">日期 ___________</div>
+  </div>
+  <div style="flex:1"></div>
+</div>
+<div class="sign-row" style="margin-top:-1px">
+  <div class="sign-box" style="flex:2">
+    <div class="sign-title">總監</div>
+    <div style="min-height:60px"></div>
+  </div>
+  <div style="flex:1"></div>
+</div>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 儲存 PDF</button>
+</body></html>`;
+
+  const win = window.open('','_blank','width=900,height=1100');
+  win.document.write(html);
+  win.document.close();
 };
 
 window.resolveIssue = async id => { await updateDoc(doc(db,'issues',id), { done:true }); };
@@ -1580,10 +1867,16 @@ window.openEditMaterial = (id) => {
 window.openEditClaim = (id) => {
   const p = window._cache.claims[id]; if(!p) return;
   document.getElementById('ec-id').value = id;
-  document.getElementById('ec-proj').value = p.proj||'';
-  document.getElementById('ec-vendor').value = p.vendor||'';
-  document.getElementById('ec-amount').value = p.amount||'';
-  document.getElementById('ec-paydate').value = p.payDate||'';
+  const setVal = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val||''; };
+  setVal('ec-proj', p.proj); setVal('ec-vendor', p.vendor);
+  setVal('ec-item', p.item); setVal('ec-content', p.content);
+  setVal('ec-applicant', p.applicant); setVal('ec-applydate', p.applyDate);
+  setVal('ec-completedate', p.completeDate); setVal('ec-paydate', p.payDate);
+  setVal('ec-contract', p.contract); setVal('ec-contract-adj', p.contractAdj);
+  setVal('ec-pretax', p.pretax); setVal('ec-invoice', p.invoice);
+  setVal('ec-payee', p.payee); setVal('ec-taxid', p.taxid);
+  setVal('ec-bank', p.bank); setVal('ec-branch', p.branch); setVal('ec-account', p.account);
+  setVal('ec-note', p.note); setVal('ec-adjnote', p.adjNote);
   [...document.getElementById('ec-status').options].forEach(o => o.selected = o.value === p.status);
   openModal('editClaim');
 };
@@ -1651,7 +1944,32 @@ window.updateMaterial = async () => {
 
 window.updateClaim = async () => {
   const id = document.getElementById('ec-id').value;
-  await updateDoc(doc(db,'claims',id), { proj:document.getElementById('ec-proj').value, vendor:document.getElementById('ec-vendor').value, amount:document.getElementById('ec-amount').value, payDate:document.getElementById('ec-paydate').value, status:document.getElementById('ec-status').value });
+  const pretax = parseFloat(document.getElementById('ec-pretax').value)||0;
+  const tax = Math.round(pretax * 0.05);
+  const total = pretax + tax;
+  await updateDoc(doc(db,'claims',id), {
+    proj: document.getElementById('ec-proj').value,
+    vendor: document.getElementById('ec-vendor').value,
+    item: document.getElementById('ec-item').value,
+    content: document.getElementById('ec-content').value,
+    applicant: document.getElementById('ec-applicant').value,
+    applyDate: document.getElementById('ec-applydate').value,
+    completeDate: document.getElementById('ec-completedate').value,
+    payDate: document.getElementById('ec-paydate').value,
+    contract: parseFloat(document.getElementById('ec-contract').value)||0,
+    contractAdj: parseFloat(document.getElementById('ec-contract-adj').value)||0,
+    pretax, tax, total,
+    invoice: document.getElementById('ec-invoice').value,
+    payee: document.getElementById('ec-payee').value,
+    taxid: document.getElementById('ec-taxid').value,
+    bank: document.getElementById('ec-bank').value,
+    branch: document.getElementById('ec-branch').value,
+    account: document.getElementById('ec-account').value,
+    note: document.getElementById('ec-note').value,
+    adjNote: document.getElementById('ec-adjnote').value,
+    status: document.getElementById('ec-status').value,
+    amount: total,
+  });
   closeModal('editClaim');
 };
 
