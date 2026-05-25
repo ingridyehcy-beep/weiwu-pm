@@ -255,6 +255,8 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <button class="tab" onclick="switchTab('budget',this)">💰 費用預算</button>
   <button class="tab" onclick="switchTab('material',this)">📦 材料清單</button>
   <button class="tab" onclick="switchTab('claim',this)">📋 請款流程</button>
+  <button class="tab" onclick="switchTab('quote',this)">📝 報價單</button>
+  <button class="tab" onclick="switchTab('clients',this)">👥 客戶名單</button>
   <button class="tab" onclick="switchTab('calendar',this)">📅 日曆</button>
 </div>
 
@@ -358,6 +360,43 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
         <thead><tr><th>請款單號</th><th>所屬專案</th><th>廠商</th><th>工程項目</th><th>未稅金額</th><th>含稅金額</th><th>申請日期</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody id="claim-table"><tr><td colspan="9" class="loading">載入中...</td></tr></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- 報價單系統 -->
+  <div id="tab-quote" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">報價單系統</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="openModal('addQuote')">＋ 新增報價單</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>報價單號</th><th>專案/客戶</th><th>報價日期</th><th>報價總額(未稅)</th><th>追加減</th><th>狀態</th><th>操作</th></tr></thead>
+        <tbody id="quote-table"><tr><td colspan="7" class="loading">載入中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 客戶名單 -->
+  <div id="tab-clients" class="tab-content">
+    <div class="section-header">
+      <div class="section-title">客戶資料庫</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="client-search" placeholder="🔍 搜尋客戶姓名、電話..." style="padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:220px" oninput="filterClients()">
+        <select id="client-grade-filter" onchange="filterClients()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
+          <option value="">全部等級</option>
+          <option value="A">A 級（VIP）</option>
+          <option value="B">B 級（重要）</option>
+          <option value="C">C 級（一般）</option>
+          <option value="潛在">潛在客戶</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openModal('addClient')">＋ 新增客戶</button>
+      </div>
+    </div>
+    <div id="client-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:16px 0">
+      <div class="empty" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">載入中...</div>
     </div>
   </div>
 
@@ -747,12 +786,159 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   </div>
 </div>
 
+
+<!-- 新增報價單 Modal -->
+<div class="modal-backdrop" id="modal-addQuote">
+  <div class="modal" style="max-width:720px;width:95vw">
+    <div class="modal-title">📝 新增報價單</div>
+    <div class="form-grid">
+      <div class="form-row"><label>專案/客戶名稱</label>
+        <select id="q-proj-sel" onchange="document.getElementById('q-proj').value=this.value">
+          <option value="">— 選擇專案 —</option>
+        </select>
+        <input type="hidden" id="q-proj">
+      </div>
+      <div class="form-row"><label>報價日期</label><input id="q-date" type="date"></div>
+      <div class="form-row"><label>施工地點</label><input id="q-address" placeholder="施工地址"></div>
+      <div class="form-row"><label>業主姓名</label><input id="q-owner" placeholder="業主姓名"></div>
+      <div class="form-row"><label>業主電話</label><input id="q-phone" placeholder="聯絡電話"></div>
+      <div class="form-row"><label>報價狀態</label>
+        <select id="q-status">
+          <option>草稿</option><option>已送出</option><option>客戶確認中</option><option>已簽署</option><option>未成交</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">付款期程</div>
+    <div id="q-stages-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:12px" id="q-stages-table">
+        <thead><tr style="background:var(--surface3)">
+          <th style="padding:6px;border:1px solid var(--border);text-align:left">期別</th>
+          <th style="padding:6px;border:1px solid var(--border)">合約金額</th>
+          <th style="padding:6px;border:1px solid var(--border)">預計付款日</th>
+          <th style="padding:6px;border:1px solid var(--border)">付款日</th>
+          <th style="padding:6px;border:1px solid var(--border)">付款金額</th>
+          <th style="padding:6px;border:1px solid var(--border)">備註</th>
+          <th style="padding:6px;border:1px solid var(--border);width:32px"></th>
+        </tr></thead>
+        <tbody id="q-stages-body"></tbody>
+      </table>
+      <button type="button" onclick="addQuoteStage()" style="margin-top:8px;font-size:12px;padding:4px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--accent);cursor:pointer">＋ 新增期別</button>
+    </div>
+    <div style="margin:12px 0 6px;font-weight:600;color:var(--text2);font-size:13px">追加減明細</div>
+    <div id="q-adj-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:12px" id="q-adj-table">
+        <thead><tr style="background:var(--surface3)">
+          <th style="padding:6px;border:1px solid var(--border);text-align:left">項目說明</th>
+          <th style="padding:6px;border:1px solid var(--border)">金額（正=追加/負=減少）</th>
+          <th style="padding:6px;border:1px solid var(--border);width:32px"></th>
+        </tr></thead>
+        <tbody id="q-adj-body"></tbody>
+      </table>
+      <button type="button" onclick="addQuoteAdj()" style="margin-top:8px;font-size:12px;padding:4px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--accent);cursor:pointer">＋ 新增追加減</button>
+    </div>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="form-row"><label>匯款戶名</label><input id="q-payee" placeholder="微物設計室內裝修有限公司"></div>
+      <div class="form-row"><label>匯款銀行</label><input id="q-bank" placeholder="例：中國信託（822）城東分行"></div>
+      <div class="form-row"><label>匯款帳號</label><input id="q-account" placeholder="帳號"></div>
+      <div class="form-row"><label>備註</label><input id="q-note" placeholder="備註..."></div>
+    </div>
+    <div style="margin:10px 0 4px;font-size:12px;color:var(--text3)">
+      總計（未稅）：<strong id="q-total-preview" style="color:var(--accent)">NT$ 0</strong>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addQuote')">取消</button>
+      <button class="btn btn-ghost" onclick="previewQuote()">👁 預覽</button>
+      <button class="btn btn-primary" onclick="saveQuote()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增客戶 Modal -->
+<div class="modal-backdrop" id="modal-addClient">
+  <div class="modal" style="max-width:640px;width:95vw">
+    <div class="modal-title">👤 新增客戶</div>
+    <div class="form-grid">
+      <div class="form-row"><label>客戶姓名</label><input id="cl-name" placeholder="姓名"></div>
+      <div class="form-row"><label>稱謂</label><input id="cl-title" placeholder="例：先生、小姐、董事長"></div>
+      <div class="form-row"><label>電話</label><input id="cl-phone" placeholder="手機/市話"></div>
+      <div class="form-row"><label>電子郵件</label><input id="cl-email" placeholder="email"></div>
+      <div class="form-row"><label>地址</label><input id="cl-address" placeholder="聯絡地址"></div>
+      <div class="form-row"><label>重要性分級</label>
+        <select id="cl-grade">
+          <option value="A">A 級（VIP）</option>
+          <option value="B">B 級（重要）</option>
+          <option value="C" selected>C 級（一般）</option>
+          <option value="潛在">潛在客戶</option>
+        </select>
+      </div>
+      <div class="form-row"><label>配合專案</label><input id="cl-projects" placeholder="例：宏普畫時代-時代苑（多個用逗號分隔）"></div>
+      <div class="form-row"><label>專案預算（NT$）</label><input id="cl-budget" type="number" placeholder="0"></div>
+      <div class="form-row"><label>來源/關係</label><input id="cl-source" placeholder="例：老客戶介紹、展場認識"></div>
+      <div class="form-row"><label>生日</label><input id="cl-birthday" type="date"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px"><label>說過的計畫/需求</label><textarea id="cl-plans" rows="2" placeholder="例：想在明年換房、預算約300萬..."></textarea></div>
+    <div class="form-row"><label>備註</label><textarea id="cl-note" rows="2" placeholder="其他備註..."></textarea></div>
+    <div class="form-row" style="margin-top:8px"><label>送禮記錄</label><input id="cl-gifts" placeholder="例：2024過年-紅酒、2024中秋-月餅禮盒"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addClient')">取消</button>
+      <button class="btn btn-primary" onclick="saveClient()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 編輯客戶 Modal -->
+<div class="modal-backdrop" id="modal-editClient">
+  <div class="modal" style="max-width:640px;width:95vw">
+    <div class="modal-title">✏️ 編輯客戶</div>
+    <div class="form-grid">
+      <div class="form-row"><label>客戶姓名</label><input id="ecl-name" placeholder="姓名"></div>
+      <div class="form-row"><label>稱謂</label><input id="ecl-title" placeholder="例：先生、小姐、董事長"></div>
+      <div class="form-row"><label>電話</label><input id="ecl-phone" placeholder="手機/市話"></div>
+      <div class="form-row"><label>電子郵件</label><input id="ecl-email" placeholder="email"></div>
+      <div class="form-row"><label>地址</label><input id="ecl-address" placeholder="聯絡地址"></div>
+      <div class="form-row"><label>重要性分級</label>
+        <select id="ecl-grade">
+          <option value="A">A 級（VIP）</option>
+          <option value="B">B 級（重要）</option>
+          <option value="C">C 級（一般）</option>
+          <option value="潛在">潛在客戶</option>
+        </select>
+      </div>
+      <div class="form-row"><label>配合專案</label><input id="ecl-projects" placeholder="例：宏普畫時代-時代苑"></div>
+      <div class="form-row"><label>專案預算（NT$）</label><input id="ecl-budget" type="number" placeholder="0"></div>
+      <div class="form-row"><label>來源/關係</label><input id="ecl-source" placeholder="來源或關係"></div>
+      <div class="form-row"><label>生日</label><input id="ecl-birthday" type="date"></div>
+    </div>
+    <div class="form-row" style="margin-top:8px"><label>說過的計畫/需求</label><textarea id="ecl-plans" rows="2" placeholder="說過的計畫..."></textarea></div>
+    <div class="form-row"><label>備註</label><textarea id="ecl-note" rows="2" placeholder="其他備註..."></textarea></div>
+    <div class="form-row" style="margin-top:8px"><label>送禮記錄</label><input id="ecl-gifts" placeholder="送禮記錄..."></div>
+    <input type="hidden" id="ecl-id">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editClient')">取消</button>
+      <button class="btn btn-primary" onclick="updateClient()">儲存變更</button>
+    </div>
+  </div>
+</div>
 <div class="modal-backdrop" id="modal-editClaim">
   <div class="modal" style="max-width:700px;width:95vw">
     <div class="modal-title">✏️ 編輯請款單</div>
     <div class="form-grid">
-      <div class="form-row"><label>所屬專案</label><input id="ec-proj" placeholder="專案名稱"></div>
-      <div class="form-row"><label>廠商名稱</label><input id="ec-vendor" placeholder="廠商名稱"></div>
+      <div class="form-row">
+        <label>所屬專案</label>
+        <select id="ec-proj-sel" onchange="document.getElementById('ec-proj').value=this.value">
+          <option value="">— 選擇專案 —</option>
+        </select>
+        <input type="hidden" id="ec-proj">
+      </div>
+      <div class="form-row">
+        <label>廠商名稱
+          <button type="button" onclick="openModal('addVendor')" style="margin-left:8px;font-size:11px;padding:2px 8px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer">＋ 新增廠商</button>
+        </label>
+        <select id="ec-vendor-sel" onchange="claimVendorSelected('ec')">
+          <option value="">— 選擇廠商 —</option>
+        </select>
+        <input type="hidden" id="ec-vendor">
+      </div>
       <div class="form-row"><label>工程項目</label><input id="ec-item" placeholder="例：燈具設備"></div>
       <div class="form-row"><label>項目內容</label><input id="ec-content" placeholder="例：鋁框門"></div>
       <div class="form-row"><label>申請單位/人員</label><input id="ec-applicant" placeholder="例：Erika"></div>
@@ -900,8 +1086,22 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <div class="modal" style="max-width:700px;width:95vw">
     <div class="modal-title">＋ 新增請款單</div>
     <div class="form-grid">
-      <div class="form-row"><label>所屬專案</label><input id="c-proj" placeholder="專案名稱"></div>
-      <div class="form-row"><label>廠商名稱</label><input id="c-vendor" placeholder="廠商名稱"></div>
+      <div class="form-row">
+        <label>所屬專案</label>
+        <select id="c-proj-sel" onchange="document.getElementById('c-proj').value=this.value">
+          <option value="">— 選擇專案 —</option>
+        </select>
+        <input type="hidden" id="c-proj">
+      </div>
+      <div class="form-row">
+        <label>廠商名稱
+          <button type="button" onclick="openModal('addVendor')" style="margin-left:8px;font-size:11px;padding:2px 8px;background:var(--surface3);border:1px solid var(--border);border-radius:4px;color:var(--accent);cursor:pointer">＋ 新增廠商</button>
+        </label>
+        <select id="c-vendor-sel" onchange="claimVendorSelected('c')">
+          <option value="">— 選擇廠商 —</option>
+        </select>
+        <input type="hidden" id="c-vendor">
+      </div>
       <div class="form-row"><label>工程項目</label><input id="c-item" placeholder="例：燈具設備"></div>
       <div class="form-row"><label>項目內容</label><input id="c-content" placeholder="例：鋁框門"></div>
       <div class="form-row"><label>申請單位/人員</label><input id="c-applicant" placeholder="例：Erika"></div>
@@ -1228,7 +1428,15 @@ window.switchTab = (id, el) => {
 };
 
 // ── Modal ──
-window.openModal = id => document.getElementById('modal-' + id).classList.add('open');
+window.openModal = id => {
+  if (id === 'addQuote') {
+    _quoteStages = []; _quoteAdjs = [];
+    renderQuoteStages(); renderQuoteAdjs(); calcQuoteTotal();
+    updateClaimDropdowns();
+  }
+  if (id === 'addClaim' || id === 'editClaim') updateClaimDropdowns();
+  document.getElementById('modal-' + id).classList.add('open');
+};
 window.closeModal = id => document.getElementById('modal-' + id).classList.remove('open');
 // Modal backdrop click disabled - must use 取消 or 儲存變更 buttons
 
@@ -1324,6 +1532,7 @@ function listenProjects() {
       return ao - bo;
     });
     rows.forEach(d => window._cache.projects[d.id] = d.data());
+    updateClaimDropdowns();
     document.getElementById('s-projects').textContent = rows.length;
     const container = document.getElementById('project-cards');
     if (!rows.length) {
@@ -1453,6 +1662,7 @@ function listenIssues() {
 function listenVendors() {
   onSnapshot(collection(db,'vendors'), snap => {
     snap.docs.forEach(d => window._cache.vendors[d.id] = d.data());
+    updateClaimDropdowns();
     document.getElementById('s-vendors').textContent = snap.docs.length;
     updateTradeVendorSelects();
     _vendorData = snap.docs.map(d => [d.id, d.data()]);
@@ -1518,6 +1728,8 @@ function listenMaterials() {
 
 // CLAIMS
 function listenClaims() {
+  listenQuotes();
+  listenClients();
   onSnapshot(collection(db,'claims'), snap => {
     snap.docs.forEach(d => window._cache.claims[d.id] = d.data());
     const tb = document.getElementById('claim-table');
@@ -1979,6 +2191,334 @@ ${(p.paymentProof||[]).length ? `
   win.document.close();
 };
 
+
+// ── Update Claim dropdowns (proj + vendor) ──
+function updateClaimDropdowns() {
+  const projects = Object.values(window._cache.projects).map(p => p.name).filter(Boolean).sort();
+  const vendors = Object.entries(window._cache.vendors).map(([id,v]) => ({ id, name: v.name, company:v.company||'', taxid:v.taxid||'', bank:v.bank||'', branch:v.branch||'', account:v.account||'' })).filter(v=>v.name).sort((a,b)=>a.name.localeCompare(b.name,'zh-TW'));
+
+  ['c','ec'].forEach(prefix => {
+    const pSel = document.getElementById(`${prefix}-proj-sel`);
+    if (pSel) {
+      const cur = document.getElementById(`${prefix}-proj`)?.value || '';
+      pSel.innerHTML = '<option value="">— 選擇專案 —</option>' +
+        projects.map(n => `<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+    }
+    const vSel = document.getElementById(`${prefix}-vendor-sel`);
+    if (vSel) {
+      const cur = document.getElementById(`${prefix}-vendor`)?.value || '';
+      vSel.innerHTML = '<option value="">— 選擇廠商 —</option>' +
+        vendors.map(v => `<option value="${v.name}" data-company="${v.company}" data-taxid="${v.taxid}" data-bank="${v.bank}" data-branch="${v.branch}" data-account="${v.account}"${v.name===cur?' selected':''}>${v.name}</option>`).join('');
+    }
+  });
+
+  // Also update quote dropdown
+  const qSel = document.getElementById('q-proj-sel');
+  if (qSel) {
+    const cur = document.getElementById('q-proj')?.value || '';
+    qSel.innerHTML = '<option value="">— 選擇專案 —</option>' +
+      projects.map(n => `<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+  }
+}
+
+window.claimVendorSelected = (prefix) => {
+  const sel = document.getElementById(`${prefix}-vendor-sel`);
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById(`${prefix}-vendor`).value = sel.value;
+  if (sel.value) {
+    const setV = (id, val) => { const el = document.getElementById(id); if(el) el.value = val||''; };
+    setV(`${prefix}-payee`, opt.dataset.company || sel.value);
+    setV(`${prefix}-taxid`, opt.dataset.taxid);
+    setV(`${prefix}-bank`, opt.dataset.bank);
+    setV(`${prefix}-branch`, opt.dataset.branch);
+    setV(`${prefix}-account`, opt.dataset.account);
+  }
+};
+
+// ── Quote Stage / Adj helpers ──
+let _quoteStages = [];
+let _quoteAdjs = [];
+
+window.addQuoteStage = () => {
+  _quoteStages.push({ label:'', amount:'', planDate:'', payDate:'', paidAmount:'', note:'' });
+  renderQuoteStages();
+};
+window.removeQuoteStage = (i) => { _quoteStages.splice(i,1); renderQuoteStages(); };
+window.addQuoteAdj = () => { _quoteAdjs.push({ desc:'', amount:'' }); renderQuoteAdjs(); };
+window.removeQuoteAdj = (i) => { _quoteAdjs.splice(i,1); renderQuoteAdjs(); calcQuoteTotal(); };
+
+function renderQuoteStages() {
+  const tbody = document.getElementById('q-stages-body');
+  if (!tbody) return;
+  tbody.innerHTML = _quoteStages.map((s,i) => `<tr>
+    <td style="border:1px solid var(--border);padding:4px"><input value="${s.label}" oninput="_quoteStages[${i}].label=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="期別說明"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input type="number" value="${s.amount}" oninput="_quoteStages[${i}].amount=this.value;calcQuoteTotal()" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="0"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input type="date" value="${s.planDate}" oninput="_quoteStages[${i}].planDate=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input type="date" value="${s.payDate}" oninput="_quoteStages[${i}].payDate=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input type="number" value="${s.paidAmount}" oninput="_quoteStages[${i}].paidAmount=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="0"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input value="${s.note}" oninput="_quoteStages[${i}].note=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="備註"></td>
+    <td style="border:1px solid var(--border);padding:4px;text-align:center"><button onclick="removeQuoteStage(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button></td>
+  </tr>`).join('');
+}
+
+function renderQuoteAdjs() {
+  const tbody = document.getElementById('q-adj-body');
+  if (!tbody) return;
+  tbody.innerHTML = _quoteAdjs.map((a,i) => `<tr>
+    <td style="border:1px solid var(--border);padding:4px"><input value="${a.desc}" oninput="_quoteAdjs[${i}].desc=this.value" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="追加減說明"></td>
+    <td style="border:1px solid var(--border);padding:4px"><input type="number" value="${a.amount}" oninput="_quoteAdjs[${i}].amount=this.value;calcQuoteTotal()" style="width:100%;background:transparent;border:none;color:var(--text);font-size:12px" placeholder="正數=追加 負數=減少"></td>
+    <td style="border:1px solid var(--border);padding:4px;text-align:center"><button onclick="removeQuoteAdj(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button></td>
+  </tr>`).join('');
+}
+
+function calcQuoteTotal() {
+  const stageTotal = _quoteStages.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+  const adjTotal = _quoteAdjs.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+  const total = stageTotal + adjTotal;
+  const el = document.getElementById('q-total-preview');
+  if (el) el.textContent = 'NT$ ' + total.toLocaleString('zh-TW');
+  return total;
+}
+
+window.saveQuote = async () => {
+  const proj = document.getElementById('q-proj').value;
+  if (!proj) { alert('請選擇專案'); return; }
+  const total = calcQuoteTotal();
+  const adjTotal = _quoteAdjs.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+  await addDoc(collection(db,'quotes'), {
+    proj,
+    owner: document.getElementById('q-owner').value,
+    phone: document.getElementById('q-phone').value,
+    address: document.getElementById('q-address').value,
+    date: document.getElementById('q-date').value,
+    status: document.getElementById('q-status').value,
+    stages: _quoteStages,
+    adjs: _quoteAdjs,
+    total, adjTotal,
+    payee: document.getElementById('q-payee').value,
+    bank: document.getElementById('q-bank').value,
+    account: document.getElementById('q-account').value,
+    note: document.getElementById('q-note').value,
+    createdAt: serverTimestamp()
+  });
+  closeModal('addQuote');
+  _quoteStages = []; _quoteAdjs = [];
+  renderQuoteStages(); renderQuoteAdjs();
+};
+
+window.previewQuote = () => {
+  const proj = document.getElementById('q-proj').value || '—';
+  const owner = document.getElementById('q-owner').value;
+  const phone = document.getElementById('q-phone').value;
+  const address = document.getElementById('q-address').value;
+  const date = document.getElementById('q-date').value;
+  const payee = document.getElementById('q-payee').value || '微物設計室內裝修有限公司';
+  const bank = document.getElementById('q-bank').value || '中國信託（822）城東分行';
+  const account = document.getElementById('q-account').value || '0715 4037 5169';
+  const note = document.getElementById('q-note').value;
+  const stageTotal = _quoteStages.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+  const adjTotal = _quoteAdjs.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
+  const total = stageTotal + adjTotal;
+  const fmtN = n => (parseFloat(n)||0).toLocaleString('zh-TW');
+
+  const stageRows = _quoteStages.map(s => `<tr>
+    <td>${s.label||''}</td>
+    <td><strong>${fmtN(s.amount)}</strong></td>
+    <td>${s.planDate||''}</td>
+    <td>${s.payDate||''}</td>
+    <td>${s.paidAmount ? fmtN(s.paidAmount) : ''}</td>
+    <td>${s.note||''}</td>
+  </tr>`).join('');
+
+  const adjRows = _quoteAdjs.map(a => `<tr>
+    <td colspan="3">${a.desc||''}</td>
+    <td colspan="3" style="color:${parseFloat(a.amount)>=0?'#2e7d32':'#c62828'}">${parseFloat(a.amount)>=0?'+':''}${fmtN(a.amount)}</td>
+  </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">
+<title>報價單 - ${proj}</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'微軟正黑體','Microsoft JhengHei',Arial,sans-serif; font-size:13px; color:#000; background:#fff; padding:24px; }
+@media print { .no-print { display:none; } }
+.header-bar { background:#3a3a3a; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.header-bar h1 { font-size:18px; letter-spacing:4px; }
+.info-block { margin-bottom:12px; font-size:13px; }
+.info-block .row { display:flex; gap:16px; margin-bottom:4px; }
+.info-block .label { color:#666; min-width:80px; }
+table { width:100%; border-collapse:collapse; margin:12px 0; }
+th, td { border:1px solid #bbb; padding:7px 10px; text-align:center; font-size:12px; }
+th { background:#e8e8e8; }
+.footer-bar { background:#3a3a3a; color:#fff; padding:10px 20px; text-align:center; font-size:13px; margin-top:8px; }
+.sign-area { display:flex; gap:0; margin-top:20px; }
+.sign-box { flex:1; border:1px solid #bbb; padding:12px; min-height:80px; }
+.total-row { background:#f5f5f5; font-weight:700; }
+.print-btn { display:block; margin:16px auto 0; padding:10px 32px; background:#1a56db; color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; }
+</style></head><body>
+<button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 儲存 PDF</button>
+<div class="header-bar">
+  <div><div style="font-size:11px;letter-spacing:2px;opacity:.8">微 物 設 計 WEIWU Design 空 間 規 劃 / 家 具 訂 製</div></div>
+  <div style="text-align:right;font-size:12px">${date}</div>
+</div>
+<div class="info-block">
+  <div style="font-size:16px;font-weight:700;margin-bottom:8px">${proj} / 裝修工程請款單</div>
+  <div class="row"><span class="label">施工地點</span><span>${address||'—'}</span></div>
+  <div class="row"><span class="label">業主姓名</span><span>${owner||'—'}</span></div>
+  <div class="row"><span class="label">聯絡電話</span><span>${phone||'—'}</span></div>
+</div>
+<table>
+  <thead><tr><th>期別</th><th>合約付款金額</th><th>預計付款日期</th><th>付款日期</th><th>付款金額</th><th>備註</th></tr></thead>
+  <tbody>
+    ${stageRows}
+    ${adjRows}
+    <tr class="total-row">
+      <td colspan="3" style="color:#c62828;text-align:left;padding-left:12px">以上款項總價為 $${fmtN(total)}元整(未稅)</td>
+      <td colspan="3" style="color:#c62828">本次付款金額為 $${fmtN(_quoteStages.filter(s=>!s.payDate).reduce((a,s)=>a+(parseFloat(s.amount)||0),0))}元整(未稅)</td>
+    </tr>
+  </tbody>
+</table>
+<div class="footer-bar">
+  <div>匯款資訊</div>
+  <div>戶名：${payee}</div>
+  <div>銀行：${bank}</div>
+  <div style="font-size:15px;font-weight:700;letter-spacing:2px">帳號：${account}</div>
+</div>
+${note ? `<div style="margin-top:8px;font-size:12px;color:#555">備註：${note}</div>`:''}
+<div class="sign-area">
+  <div class="sign-box"><div style="font-weight:700;margin-bottom:8px">客戶簽章</div><div style="margin-top:40px;font-size:11px;color:#888">*以上條例確認並無誤</div></div>
+  <div style="flex:1"></div>
+</div>
+<button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 儲存 PDF</button>
+</body></html>`;
+  const win = window.open('','_blank','width=900,height=1000');
+  win.document.write(html); win.document.close();
+};
+
+// ── Quote listener ──
+function listenQuotes() {
+  onSnapshot(collection(db,'quotes'), snap => {
+    snap.docs.forEach(d => { if(!window._cache.quotes) window._cache.quotes={}; window._cache.quotes[d.id]=d.data(); });
+    const tb = document.getElementById('quote-table');
+    if (!tb) return;
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">尚無報價單</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map((d,i) => {
+      const q = d.data();
+      const adjTotal = (q.adjs||[]).reduce((s,a)=>s+(parseFloat(a.amount)||0),0);
+      return `<tr>
+        <td style="font-family:monospace;font-size:12px">QT-${String(i+1).padStart(3,'0')}</td>
+        <td>${q.proj||''}</td>
+        <td style="font-size:12px;color:var(--text2)">${q.date||'—'}</td>
+        <td style="font-family:monospace;color:var(--yellow)">${q.total?q.total.toLocaleString('zh-TW'):'—'}</td>
+        <td style="font-family:monospace;color:${adjTotal>=0?'var(--green)':'var(--red)'}">${adjTotal?((adjTotal>0?'+':'')+adjTotal.toLocaleString('zh-TW')):'—'}</td>
+        <td>${statusBadge(q.status||'草稿')}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="previewQuoteById('${d.id}')">預覽</button>
+          <button class="btn-danger" onclick="confirmDelete('quotes','${d.id}')">刪除</button>
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+window.previewQuoteById = (id) => {
+  const q = window._cache.quotes?.[id]; if(!q) return;
+  _quoteStages = q.stages||[];
+  _quoteAdjs = q.adjs||[];
+  const setV = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  setV('q-proj',q.proj); setV('q-owner',q.owner); setV('q-phone',q.phone);
+  setV('q-address',q.address); setV('q-date',q.date);
+  setV('q-payee',q.payee); setV('q-bank',q.bank); setV('q-account',q.account); setV('q-note',q.note);
+  previewQuote();
+};
+
+// ── Client CRUD ──
+function listenClients() {
+  onSnapshot(collection(db,'clients'), snap => {
+    snap.docs.forEach(d => { if(!window._cache.clients) window._cache.clients={}; window._cache.clients[d.id]=d.data(); });
+    renderClientCards(snap.docs);
+  });
+}
+
+function renderClientCards(docs) {
+  const container = document.getElementById('client-cards');
+  if (!container) return;
+  const search = (document.getElementById('client-search')?.value||'').toLowerCase();
+  const grade = document.getElementById('client-grade-filter')?.value||'';
+  const filtered = docs.filter(d => {
+    const c = d.data();
+    const matchSearch = !search || (c.name||'').toLowerCase().includes(search) || (c.phone||'').includes(search) || (c.projects||'').toLowerCase().includes(search);
+    const matchGrade = !grade || c.grade === grade;
+    return matchSearch && matchGrade;
+  });
+  if (!filtered.length) { container.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">尚無客戶資料</div>'; return; }
+  const gradeColor = { A:'var(--yellow)', B:'var(--blue)', C:'var(--text3)', '潛在':'var(--green)' };
+  container.innerHTML = filtered.map(d => {
+    const c = d.data();
+    const gc = gradeColor[c.grade] || 'var(--text3)';
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative">
+      <div style="position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;color:${gc};background:var(--surface2);padding:2px 8px;border-radius:10px;border:1px solid ${gc}">${c.grade||'C'} 級</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:2px">${c.name||'—'} <span style="font-size:13px;color:var(--text3);font-weight:400">${c.title||''}</span></div>
+      ${c.phone?`<div style="font-size:13px;color:var(--accent);margin-bottom:4px">📞 ${c.phone}</div>`:''}
+      ${c.email?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">✉️ ${c.email}</div>`:''}
+      ${c.projects?`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">🏠 ${c.projects}</div>`:''}
+      ${c.budget?`<div style="font-size:12px;color:var(--yellow)">💰 預算 NT$ ${parseFloat(c.budget).toLocaleString('zh-TW')}</div>`:''}
+      ${c.plans?`<div style="font-size:12px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">📝 ${c.plans}</div>`:''}
+      ${c.gifts?`<div style="font-size:11px;color:var(--text3);margin-top:4px">🎁 ${c.gifts}</div>`:''}
+      ${c.birthday?`<div style="font-size:11px;color:var(--text3);margin-top:4px">🎂 ${c.birthday}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditClient('${d.id}')">編輯</button>
+        <button class="btn-danger" onclick="confirmDelete('clients','${d.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.filterClients = () => {
+  const docs = Object.entries(window._cache.clients||{}).map(([id,data]) => ({ id, data:()=>data }));
+  renderClientCards(docs);
+};
+
+window.saveClient = async () => {
+  const name = document.getElementById('cl-name').value; if(!name){alert('請輸入姓名');return;}
+  await addDoc(collection(db,'clients'), {
+    name, title:document.getElementById('cl-title').value,
+    phone:document.getElementById('cl-phone').value, email:document.getElementById('cl-email').value,
+    address:document.getElementById('cl-address').value, grade:document.getElementById('cl-grade').value,
+    projects:document.getElementById('cl-projects').value, budget:document.getElementById('cl-budget').value,
+    source:document.getElementById('cl-source').value, birthday:document.getElementById('cl-birthday').value,
+    plans:document.getElementById('cl-plans').value, note:document.getElementById('cl-note').value,
+    gifts:document.getElementById('cl-gifts').value, createdAt:serverTimestamp()
+  });
+  closeModal('addClient');
+  ['cl-name','cl-title','cl-phone','cl-email','cl-address','cl-projects','cl-budget','cl-source','cl-birthday','cl-plans','cl-note','cl-gifts'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+};
+
+window.openEditClient = (id) => {
+  const c = window._cache.clients?.[id]; if(!c) return;
+  document.getElementById('ecl-id').value = id;
+  const setV = (eid,v) => { const el=document.getElementById(eid); if(el) el.value=v||''; };
+  setV('ecl-name',c.name); setV('ecl-title',c.title); setV('ecl-phone',c.phone);
+  setV('ecl-email',c.email); setV('ecl-address',c.address);
+  setV('ecl-projects',c.projects); setV('ecl-budget',c.budget); setV('ecl-source',c.source);
+  setV('ecl-birthday',c.birthday); setV('ecl-plans',c.plans); setV('ecl-note',c.note); setV('ecl-gifts',c.gifts);
+  [...document.getElementById('ecl-grade').options].forEach(o=>o.selected=o.value===c.grade);
+  openModal('editClient');
+};
+
+window.updateClient = async () => {
+  const id = document.getElementById('ecl-id').value;
+  await updateDoc(doc(db,'clients',id), {
+    name:document.getElementById('ecl-name').value, title:document.getElementById('ecl-title').value,
+    phone:document.getElementById('ecl-phone').value, email:document.getElementById('ecl-email').value,
+    address:document.getElementById('ecl-address').value, grade:document.getElementById('ecl-grade').value,
+    projects:document.getElementById('ecl-projects').value, budget:document.getElementById('ecl-budget').value,
+    source:document.getElementById('ecl-source').value, birthday:document.getElementById('ecl-birthday').value,
+    plans:document.getElementById('ecl-plans').value, note:document.getElementById('ecl-note').value,
+    gifts:document.getElementById('ecl-gifts').value,
+  });
+  closeModal('editClient');
+};
+
 window.resolveIssue = async id => { await updateDoc(doc(db,'issues',id), { done:true }); };
 
 // ── Edit Open Functions ──
@@ -2048,10 +2588,16 @@ window.openEditMaterial = (id) => {
 };
 
 window.openEditClaim = (id) => {
+  updateClaimDropdowns();
   const p = window._cache.claims[id]; if(!p) return;
   document.getElementById('ec-id').value = id;
   const setVal = (elId, val) => { const el = document.getElementById(elId); if(el) el.value = val||''; };
   setVal('ec-proj', p.proj); setVal('ec-vendor', p.vendor);
+  // Sync hidden inputs to dropdowns
+  setTimeout(() => {
+    const ps = document.getElementById('ec-proj-sel'); if(ps) ps.value = p.proj||'';
+    const vs = document.getElementById('ec-vendor-sel'); if(vs) vs.value = p.vendor||'';
+  }, 50);
   setVal('ec-item', p.item); setVal('ec-content', p.content);
   setVal('ec-applicant', p.applicant); setVal('ec-applydate', p.applyDate);
   setVal('ec-completedate', p.completeDate); setVal('ec-paydate', p.payDate);
