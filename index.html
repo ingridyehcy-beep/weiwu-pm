@@ -245,6 +245,7 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <div class="sync-status live" id="sync-status">● 即時同步中</div>
   <div style="display:flex;gap:8px">
     <button class="btn btn-ghost btn-sm" onclick="exportExcel()">📊 匯出 Excel</button>
+    <button class="btn btn-ghost btn-sm" onclick="backupAllData()" title="下載完整 JSON 備份">💾 備份資料</button>
     <button class="btn btn-primary btn-sm" onclick="openModal('addProject')">＋ 新增專案</button>
   </div>
 </div>
@@ -318,28 +319,13 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <!-- 費用預算 -->
   <div id="tab-budget" class="tab-content">
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-label">廠商支出總額（含稅）</div><div class="stat-value" style="color:var(--red)" id="s-total-expense">NT$0</div></div>
-      <div class="stat-card"><div class="stat-label">付款完成</div><div class="stat-value" style="color:var(--green)" id="s-paid">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">總支出</div><div class="stat-value" style="color:var(--red)" id="s-total-expense">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">已付款</div><div class="stat-value" style="color:var(--green)" id="s-paid">NT$0</div></div>
       <div class="stat-card"><div class="stat-label">待付款</div><div class="stat-value" style="color:var(--yellow)" id="s-pending">NT$0</div></div>
-      <div class="stat-card"><div class="stat-label">總預估利潤</div><div class="stat-value" style="color:var(--blue)" id="s-profit-total">NT$0</div></div>
+      <div class="stat-card"><div class="stat-label">逾期未付</div><div class="stat-value" style="color:var(--red)" id="s-overdue">NT$0</div></div>
     </div>
-
-    <!-- 專案財務總覽 -->
-    <div class="section-header" style="margin-top:8px">
-      <div class="section-title">專案財務總覽</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="budget-proj-filter" onchange="renderBudgetView()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
-          <option value="">全部專案</option>
-        </select>
-      </div>
-    </div>
-    <div id="budget-project-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px;margin-bottom:24px">
-      <div class="empty" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">載入中...</div>
-    </div>
-
-    <!-- 費用明細 -->
     <div class="section-header">
-      <div class="section-title">其他費用明細</div>
+      <div class="section-title">費用明細</div>
       <button class="btn btn-primary btn-sm" onclick="openModal('addExpense')">＋ 新增費用</button>
     </div>
     <div class="table-wrap">
@@ -368,36 +354,11 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
   <div id="tab-claim" class="tab-content">
     <div class="section-header">
       <div class="section-title">請款單管理</div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="claim-search" placeholder="🔍 搜尋專案、廠商..." style="padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:200px" oninput="renderClaimTable()">
-        <select id="claim-proj-filter" onchange="renderClaimTable()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
-          <option value="">全部專案</option>
-        </select>
-        <select id="claim-status-filter" onchange="renderClaimTable()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
-          <option value="">全部狀態</option>
-          <option>草稿</option><option>財務審核中</option><option>總監審核中</option><option>已確認待付款</option><option>付款完成</option>
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="openModal('addClaim')">＋ 新增請款單</button>
-      </div>
-    </div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:8px;display:flex;gap:16px">
-      <span>共 <strong id="claim-count" style="color:var(--text)">0</strong> 筆</span>
-      <span>未稅合計 <strong id="claim-sum-pretax" style="color:var(--text2)">—</strong></span>
-      <span>含稅合計 <strong id="claim-sum-total" style="color:var(--yellow)">—</strong></span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addClaim')">＋ 新增請款單</button>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>請款單號</th>
-          <th onclick="claimSort('proj')" style="cursor:pointer;user-select:none">所屬專案 <span id="cs-proj" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th onclick="claimSort('vendor')" style="cursor:pointer;user-select:none">廠商 <span id="cs-vendor" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th>工程項目</th>
-          <th onclick="claimSort('pretax')" style="cursor:pointer;user-select:none">未稅金額 <span id="cs-pretax" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th onclick="claimSort('total')" style="cursor:pointer;user-select:none">含稅金額 <span id="cs-total" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th onclick="claimSort('applyDate')" style="cursor:pointer;user-select:none">申請日期 <span id="cs-applyDate" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th onclick="claimSort('status')" style="cursor:pointer;user-select:none">狀態 <span id="cs-status" style="color:var(--accent);font-size:11px">⇅</span></th>
-          <th>操作</th>
-        </tr></thead>
+        <thead><tr><th>請款單號</th><th>所屬專案</th><th>廠商</th><th>工程項目</th><th>未稅金額</th><th>含稅金額</th><th>申請日期</th><th>狀態</th><th>操作</th></tr></thead>
         <tbody id="claim-table"><tr><td colspan="9" class="loading">載入中...</td></tr></tbody>
       </table>
     </div>
@@ -426,18 +387,10 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div style="display:flex;align-items:center;gap:6px">
         <button id="view-card-btn" onclick="setClientView('card')" title="卡片檢視" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;color:#000;cursor:pointer;font-size:14px">⊞</button>
         <button id="view-list-btn" onclick="setClientView('list')" title="條列檢視" style="padding:4px 10px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:14px">☰</button>
-        <select id="client-sort-key" onchange="filterClients()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px">
-          <option value="">排序：預設</option>
-          <option value="name">姓名 A→Z</option>
-          <option value="grade">等級</option>
-          <option value="gifts">送禮次數</option>
-          <option value="budget">預算高→低</option>
-        </select>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <input id="client-search" placeholder="🔍 搜尋客戶姓名、電話..." style="padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;width:220px" oninput="filterClients()">
         <select id="client-grade-filter" onchange="filterClients()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px"><option value="">全部等級</option></select>
-        <button onclick="openModal('manageGrades')" style="padding:6px 10px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:12px">⚙ 等級管理</button>
         <button class="btn btn-primary btn-sm" onclick="openModal('addClient')">＋ 新增客戶</button>
       </div>
     </div>
@@ -958,7 +911,6 @@ label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; te
       <div class="form-row"><label>重要性分級</label>
         <select id="ecl-grade" style="flex:1">
         </select>
-        <button type="button" onclick="openModal('manageGrades')" style="margin-left:6px;padding:4px 10px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:12px;white-space:nowrap">⚙ 管理等級</button>
       </div>
       <div class="form-row"><label>配合專案</label><input id="ecl-projects" placeholder="例：宏普畫時代-時代苑"></div>
       <div class="form-row"><label>專案預算（NT$）</label><input id="ecl-budget" type="number" placeholder="0"></div>
@@ -1741,8 +1693,7 @@ function listenExpenses() {
     document.getElementById('s-total-expense').textContent = fmt(total);
     document.getElementById('s-paid').textContent = fmt(paid);
     document.getElementById('s-pending').textContent = fmt(pending);
-    renderBudgetView();
-    // s-overdue removed - now using s-profit-total
+    document.getElementById('s-overdue').textContent = fmt(overdue);
     const tb = document.getElementById('expense-table');
     if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">尚無費用紀錄</td></tr>'; return; }
     tb.innerHTML = snap.docs.map(d => {
@@ -1784,100 +1735,34 @@ function listenMaterials() {
 }
 
 // CLAIMS
-// Claim sort state
-let _claimSortKey = '';
-let _claimSortAsc = true;
-
-window.claimSort = (key) => {
-  if (_claimSortKey === key) _claimSortAsc = !_claimSortAsc;
-  else { _claimSortKey = key; _claimSortAsc = true; }
-  ['proj','vendor','pretax','total','applyDate','status','completeDate'].forEach(k => {
-    const el = document.getElementById('cs-'+k);
-    if (el) el.textContent = k===key ? (_claimSortAsc?'↑':'↓') : '⇅';
-  });
-  renderClaimTable();
-};
-
-window.renderClaimTable = () => {
-  const tb = document.getElementById('claim-table');
-  if (!tb) return;
-  const search = (document.getElementById('claim-search')?.value||'').toLowerCase();
-  const projF = document.getElementById('claim-proj-filter')?.value||'';
-  const statusF = document.getElementById('claim-status-filter')?.value||'';
-
-  let docs = Object.entries(window._cache.claims||{}).map(([id,d])=>({id,d}));
-
-  // Filter
-  docs = docs.filter(({d}) => {
-    const ms = !search || (d.proj||'').toLowerCase().includes(search) || (d.vendor||'').toLowerCase().includes(search) || (d.item||'').toLowerCase().includes(search) || (d.content||'').toLowerCase().includes(search);
-    const mp = !projF || d.proj === projF;
-    const mst = !statusF || d.status === statusF;
-    return ms && mp && mst;
-  });
-
-  // Sort
-  if (_claimSortKey) {
-    docs.sort((a,b) => {
-      let av = a.d[_claimSortKey]||'', bv = b.d[_claimSortKey]||'';
-      if (_claimSortKey==='pretax'||_claimSortKey==='total') { av=parseFloat(av)||0; bv=parseFloat(bv)||0; }
-      const r = av < bv ? -1 : av > bv ? 1 : 0;
-      return _claimSortAsc ? r : -r;
-    });
-  }
-
-  // Summaries
-  const sumPretax = docs.reduce((s,{d})=>s+(parseFloat(d.pretax)||0),0);
-  const sumTotal = docs.reduce((s,{d})=>s+(parseFloat(d.total)||0),0);
-  const countEl = document.getElementById('claim-count');
-  const sumPEl = document.getElementById('claim-sum-pretax');
-  const sumTEl = document.getElementById('claim-sum-total');
-  if(countEl) countEl.textContent = docs.length;
-  if(sumPEl) sumPEl.textContent = sumPretax ? fmt(sumPretax) : '—';
-  if(sumTEl) sumTEl.textContent = sumTotal ? fmt(sumTotal) : '—';
-
-  if (!docs.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">無符合條件的請款單</td></tr>'; return; }
-
-  tb.innerHTML = docs.map(({id,d},i) => {
-    const pretax = parseFloat(d.pretax||0);
-    const total = parseFloat(d.total||0) || Math.round(pretax*1.05);
-    return `<tr>
-      <td style="font-family:monospace;font-size:12px">CL-${String(i+1).padStart(3,'0')}</td>
-      <td><strong>${d.proj||''}</strong></td>
-      <td style="color:var(--text2)">${d.vendor||''}</td>
-      <td style="color:var(--text3);font-size:12px">${d.item||d.content||'—'}</td>
-      <td style="font-family:monospace;color:var(--text2)">${pretax?fmt(pretax):'—'}</td>
-      <td style="font-family:monospace;color:var(--yellow);font-weight:600">${total?fmt(total):'—'}</td>
-      <td style="font-family:monospace;font-size:11px;color:var(--text2)">${d.applyDate||d.completeDate||'—'}</td>
-      <td>${statusBadge(d.status||'草稿')}</td>
-      <td style="display:flex;gap:6px;flex-wrap:nowrap">
-        <button class="btn btn-ghost btn-sm" onclick="previewClaim('${id}')" style="white-space:nowrap">預覽${(d.attachments||[]).length?'📎':''}</button>
-        <button class="btn btn-ghost btn-sm" onclick="openEditClaim('${id}')" style="white-space:nowrap">編輯</button>
-        <button class="btn-danger" onclick="confirmDelete('claims','${id}')">刪除</button>
-      </td>
-    </tr>`;
-  }).join('');
-};
-
 function listenClaims() {
   listenQuotes();
   listenClients();
   onSnapshot(collection(db,'claims'), snap => {
     snap.docs.forEach(d => window._cache.claims[d.id] = d.data());
-    // Update claim proj filter options
-    const projs = [...new Set(snap.docs.map(d=>d.data().proj).filter(Boolean))].sort();
-    const pf = document.getElementById('claim-proj-filter');
-    if (pf) {
-      const cur = pf.value;
-      pf.innerHTML = '<option value="">全部專案</option>' + projs.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
-    }
-    // Update budget proj filter
-    const bpf = document.getElementById('budget-proj-filter');
-    if (bpf) {
-      const cur2 = bpf.value;
-      bpf.innerHTML = '<option value="">全部專案</option>' + projs.map(p=>`<option value="${p}"${p===cur2?' selected':''}>${p}</option>`).join('');
-    }
-    renderClaimTable();
-    renderBudgetView();
+    const tb = document.getElementById('claim-table');
+    if (!snap.docs.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">尚無請款單</td></tr>'; return; }
+    tb.innerHTML = snap.docs.map((d,i) => {
+      const p = d.data();
+      const pretax = parseFloat(p.pretax||0);
+      const tax = Math.round(pretax * 0.05);
+      const total = pretax + tax;
+      return `<tr>
+        <td style="font-family:monospace;font-size:12px">CL-${String(i+1).padStart(3,'0')}</td>
+        <td>${p.proj||''}</td>
+        <td style="color:var(--text2)">${p.vendor||''}</td>
+        <td style="color:var(--text3);font-size:12px">${p.item||'—'}</td>
+        <td style="font-family:monospace;color:var(--text2)">${pretax?fmt(pretax):'—'}</td>
+        <td style="font-family:monospace;color:var(--yellow);font-weight:600">${total?fmt(total):'—'}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--text2)">${p.applyDate||'—'}</td>
+        <td>${statusBadge(p.status||'草稿')}</td>
+        <td style="display:flex;gap:6px;flex-wrap:nowrap">
+          <button class="btn btn-ghost btn-sm" onclick="previewClaim('${d.id}')" style="white-space:nowrap">預覽${(p.attachments||[]).length?'📎':''}</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditClaim('${d.id}')" style="white-space:nowrap">編輯</button>
+          <button class="btn-danger" onclick="confirmDelete('claims','${d.id}')">刪除</button>
+        </td>
+      </tr>`;
+    }).join('');
   });
 }
 
@@ -2597,21 +2482,7 @@ function renderClientCards(docs) {
 }
 
 window.filterClients = () => {
-  let docs = Object.entries(window._cache.clients||{}).map(([id,data]) => ({ id, data:()=>data }));
-  const sortKey = document.getElementById('client-sort-key')?.value || '';
-  if (sortKey) {
-    docs.sort((a,b) => {
-      const ac = a.data(), bc = b.data();
-      if (sortKey==='name') return (ac.name||'').localeCompare(bc.name||'','zh-TW');
-      if (sortKey==='grade') {
-        const go = g => (window._grades||[]).indexOf(g);
-        return go(ac.grade) - go(bc.grade);
-      }
-      if (sortKey==='gifts') return ((bc.gifts||'').split('、').filter(Boolean).length) - ((ac.gifts||'').split('、').filter(Boolean).length);
-      if (sortKey==='budget') return (parseFloat(bc.budget)||0) - (parseFloat(ac.budget)||0);
-      return 0;
-    });
-  }
+  const docs = Object.entries(window._cache.clients||{}).map(([id,data]) => ({ id, data:()=>data }));
   renderClientCards(docs);
 };
 
@@ -2654,125 +2525,6 @@ window.updateClient = async () => {
     gifts:document.getElementById('ecl-gifts').value,
   });
   closeModal('editClient');
-};
-
-
-// ── 專案財務總覽 ──
-window.renderBudgetView = () => {
-  const container = document.getElementById('budget-project-cards');
-  if (!container) return;
-  const filterProj = document.getElementById('budget-proj-filter')?.value || '';
-
-  // Group claims by project
-  const claims = Object.values(window._cache.claims || {});
-  const projects = window._cache.projects || {};
-
-  // Get all unique project names from claims + projects cache
-  const projNames = [...new Set([
-    ...Object.values(projects).map(p=>p.name).filter(Boolean),
-    ...claims.map(c=>c.proj).filter(Boolean)
-  ])].sort();
-
-  const filtered = filterProj ? [filterProj] : projNames;
-
-  if (!filtered.length) {
-    container.innerHTML = '<div class="empty" style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">尚無財務資料</div>';
-    return;
-  }
-
-  let totalProfit = 0;
-
-  container.innerHTML = filtered.map(projName => {
-    const projClaims = claims.filter(c => c.proj === projName);
-    if (!projClaims.length) return '';
-
-    // Contract total (sum of all contract amounts for this project)
-    const contractTotal = projClaims.reduce((s,c) => s + (parseFloat(c.contract)||0), 0);
-    // Vendor cost total (含稅 - what we paid vendors)
-    const vendorTotal = projClaims.reduce((s,c) => s + (parseFloat(c.total)||0), 0);
-    // Paid amount
-    const paidTotal = projClaims.filter(c=>c.status==='付款完成').reduce((s,c) => s + (parseFloat(c.total)||0), 0);
-    const pendingTotal = vendorTotal - paidTotal;
-    // Profit estimate: contract(未稅) - vendor pretax
-    const contractPretax = projClaims.reduce((s,c) => s + (parseFloat(c.contract)||0), 0);
-    const vendorPretax = projClaims.reduce((s,c) => s + (parseFloat(c.pretax)||0), 0);
-    const profit = contractPretax - vendorPretax;
-    const profitRate = contractPretax ? Math.round(profit/contractPretax*100) : 0;
-    const profitColor = profitRate >= 30 ? 'var(--green)' : profitRate >= 15 ? 'var(--yellow)' : 'var(--red)';
-    totalProfit += profit;
-
-    // Claims breakdown
-    const claimRows = projClaims.map(c => {
-      const total = parseFloat(c.total)||0;
-      const statusColor = c.status==='付款完成'?'var(--green)':c.status==='已確認待付款'?'var(--yellow)':'var(--text3)';
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:4px 8px;font-size:12px;color:var(--text2)">${c.vendor||'—'}</td>
-        <td style="padding:4px 8px;font-size:12px;color:var(--text3)">${c.item||c.content||'—'}</td>
-        <td style="padding:4px 8px;font-size:12px;font-family:monospace;text-align:right">${total?fmt(total):'—'}</td>
-        <td style="padding:4px 8px;font-size:11px;color:${statusColor}">${c.status||'—'}</td>
-      </tr>`;
-    }).join('');
-
-    // Find project obj for status
-    const projObj = Object.values(projects).find(p=>p.name===projName) || {};
-
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-      <div style="padding:14px 16px;background:var(--surface2);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
-        <div>
-          <div style="font-size:15px;font-weight:700">${projName}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${projClaims.length} 筆請款 | ${projObj.status||'—'}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:18px;font-weight:700;color:${profitColor}">${profitRate}%</div>
-          <div style="font-size:11px;color:var(--text3)">利潤率</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--border)">
-        <div style="padding:10px 14px;border-right:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:3px">合約金額（未稅）</div>
-          <div style="font-size:14px;font-weight:600;font-family:monospace">${contractPretax?fmt(contractPretax):'—'}</div>
-        </div>
-        <div style="padding:10px 14px;border-right:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:3px">廠商支出（含稅）</div>
-          <div style="font-size:14px;font-weight:600;font-family:monospace;color:var(--red)">${vendorTotal?fmt(vendorTotal):'—'}</div>
-        </div>
-        <div style="padding:10px 14px;border-right:1px solid var(--border)">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:3px">已付款</div>
-          <div style="font-size:14px;font-weight:600;font-family:monospace;color:var(--green)">${paidTotal?fmt(paidTotal):'NT$0'}</div>
-        </div>
-        <div style="padding:10px 14px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:3px">預估利潤（未稅）</div>
-          <div style="font-size:14px;font-weight:600;font-family:monospace;color:${profitColor}">${profit?fmt(profit):'—'}</div>
-        </div>
-      </div>
-      <div style="max-height:180px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr style="background:var(--surface2)">
-            <th style="padding:5px 8px;text-align:left;font-size:11px;color:var(--text3);font-weight:500">廠商</th>
-            <th style="padding:5px 8px;text-align:left;font-size:11px;color:var(--text3);font-weight:500">項目</th>
-            <th style="padding:5px 8px;text-align:right;font-size:11px;color:var(--text3);font-weight:500">含稅金額</th>
-            <th style="padding:5px 8px;text-align:left;font-size:11px;color:var(--text3);font-weight:500">狀態</th>
-          </tr></thead>
-          <tbody>${claimRows}</tbody>
-        </table>
-      </div>
-    </div>`;
-  }).filter(Boolean).join('');
-
-  // Update total profit stat
-  const profEl = document.getElementById('s-profit-total');
-  if (profEl) profEl.textContent = fmt(totalProfit);
-
-  // Update total paid & pending from claims
-  const allClaims = Object.values(window._cache.claims||{});
-  const totalVendor = allClaims.reduce((s,c)=>s+(parseFloat(c.total)||0),0);
-  const totalPaid = allClaims.filter(c=>c.status==='付款完成').reduce((s,c)=>s+(parseFloat(c.total)||0),0);
-  const expEl = document.getElementById('s-total-expense');
-  const paidEl = document.getElementById('s-paid');
-  const pendEl = document.getElementById('s-pending');
-  if (expEl) expEl.textContent = fmt(totalVendor);
-  if (paidEl) paidEl.textContent = fmt(totalPaid);
-  if (pendEl) pendEl.textContent = fmt(totalVendor - totalPaid);
 };
 
 window.resolveIssue = async id => { await updateDoc(doc(db,'issues',id), { done:true }); };
@@ -3008,6 +2760,59 @@ window.deleteDoc = deleteDoc;
 window.doc = (ignore, col, id) => doc(db, col, id);
 
 // ── Excel Export ──
+
+// ── 完整資料備份 ──
+window.backupAllData = async () => {
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '備份中...';
+  btn.disabled = true;
+  try {
+    const cols = ['projects','vendors','expenses','materials','claims','quotes','clients','clientGrades','events'];
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      system: 'WEIWU Design 專案管理',
+      data: {}
+    };
+    for (const col of cols) {
+      try {
+        const snap = await getDocs(collection(db, col));
+        backup.data[col] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Convert Firestore Timestamps to ISO strings
+        backup.data[col] = backup.data[col].map(doc => {
+          const clean = {};
+          for (const [k,v] of Object.entries(doc)) {
+            if (v && typeof v === 'object' && v.toDate) {
+              clean[k] = v.toDate().toISOString();
+            } else {
+              clean[k] = v;
+            }
+          }
+          return clean;
+        });
+      } catch(e) {
+        backup.data[col] = [];
+      }
+    }
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toLocaleDateString('zh-TW').replace(/\//g,'-');
+    a.download = `WEIWU_完整備份_${dateStr}.json`;
+    a.href = url;
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = '✓ 備份完成';
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+  } catch(e) {
+    console.error('Backup error:', e);
+    btn.textContent = '備份失敗';
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+  }
+};
+
 window.exportExcel = async () => {
   const cols = ['projects','issues','vendors','expenses','materials','claims'];
   const allData = {};
@@ -3874,11 +3679,11 @@ function renderClientList(docs) {
   container.style.display='block';
   container.innerHTML=`<table style="width:100%;border-collapse:collapse">
     <thead><tr style="background:var(--surface2);font-size:12px;color:var(--text2)">
-      <th onclick="document.getElementById('client-sort-key').value='name';filterClients()" style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer">姓名 ⇅</th>
-      <th onclick="document.getElementById('client-sort-key').value='grade';filterClients()" style="padding:8px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer">等級 ⇅</th>
+      <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">姓名</th>
+      <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">等級</th>
       <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">電話</th>
       <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">配合專案</th>
-      <th onclick="document.getElementById('client-sort-key').value='gifts';filterClients()" style="padding:8px;text-align:left;border-bottom:1px solid var(--border);cursor:pointer">送禮記錄 ⇅</th>
+      <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">送禮記錄</th>
       <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border)">備註</th>
       <th style="padding:8px;border-bottom:1px solid var(--border)">操作</th>
     </tr></thead>
